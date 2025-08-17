@@ -28,12 +28,15 @@ def create_diff(original_content, new_content, filename):
     }
 
 
-def apply_diff(filename: str, original: str, new: str) -> None:
+def apply_diff(filename: str, original: str, new: str) -> dict:
     """Apply a diff by writing the new content to the file"""
-    # Toggle DIFF_MODE_ACTIVE only for the duration of the guarded write
-    executor.DIFF_MODE_ACTIVE = True
     try:
+        # Set diff mode active for the duration of the write
+        executor.DIFF_MODE_ACTIVE = True
         workbench.write_file_guarded(filename, new)
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
     finally:
         executor.DIFF_MODE_ACTIVE = False
 
