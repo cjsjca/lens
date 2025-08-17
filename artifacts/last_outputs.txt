@@ -10,50 +10,6 @@ Not allowed. Diff-only and append-only per the rules.
 
 == show-log ==
 {
-  "ts": "2025-08-17T17:41:40.940283Z",
-  "type": "violation",
-  "data": {
-    "message": "Not allowed. Diff-only and append-only per the rules."
-  },
-  "hash": "9a6edd12e80dda9039839fce4385da7f5bd85253fdcacee33c319e02a05e9390"
-}
-{
-  "ts": "2025-08-17T17:57:15.445289Z",
-  "type": "rehydrate",
-  "data": {
-    "preferences_loaded": 1,
-    "corrections_loaded": 0,
-    "recent_entries_loaded": 1
-  },
-  "hash": "274624384d51ebd99837d12a8066d312552378c28e4eec0c4f046523fe531452"
-}
-{
-  "ts": "2025-08-17T17:57:15.548462Z",
-  "type": "violation",
-  "data": {
-    "message": "Not allowed. Diff-only and append-only per the rules."
-  },
-  "hash": "15289c0e835b7066476d825c930a60058b8f2cda03671d59ea4a1cb745d44d31"
-}
-{
-  "ts": "2025-08-17T17:57:15.714255Z",
-  "type": "violation",
-  "data": {
-    "message": "Not allowed. Diff-only and append-only per the rules."
-  },
-  "hash": "256cfe120f737607298fbe36c42c58bbdb57b52b85cba021b77bc5e0313d96ea"
-}
-{
-  "ts": "2025-08-17T17:57:15.798276Z",
-  "type": "rehydrate",
-  "data": {
-    "preferences_loaded": 1,
-    "corrections_loaded": 0,
-    "recent_entries_loaded": 4
-  },
-  "hash": "2a94e0473bdbecc8e105494660c7349e9f90951521e26766bd9a1344e0241cec"
-}
-{
   "ts": "2025-08-17T17:57:15.889272Z",
   "type": "violation",
   "data": {
@@ -403,3 +359,166 @@ Not allowed. Diff-only and append-only per the rules.
   },
   "hash": "211c2806bc962a8b095f5ad3f332d2d55091cb3a7cab1f0f05678bc0cbdba1d3"
 }
+{
+  "ts": "2025-08-17T19:15:23.563149Z",
+  "type": "relaxed_write",
+  "data": {
+    "path": "/home/runner/workspace/workspace/sample.txt"
+  },
+  "hash": "8860d53f485db078d2b3c6fb4ab6b7fd096c9474900289d8a2677e3c3160acf0"
+}
+{
+  "ts": "2025-08-17T19:19:00.842151Z",
+  "type": "relaxed_write",
+  "data": {
+    "path": "/home/runner/workspace/workspace/sample.txt"
+  },
+  "hash": "06629d6ae9116ec231c5d6f04ab1a71152ec589330d2fdb52c96f93bfe510a3c"
+}
+{
+  "ts": "2025-08-17T19:19:01.030773Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "6c0ec026c28cb784058bb22cb4d056de655cbfd59cf5bf8a251c1d5aa46ee105"
+}
+{
+  "ts": "2025-08-17T19:19:01.033739Z",
+  "type": "plan",
+  "data": {
+    "title": "Fix greeting",
+    "target_file": "sample.txt",
+    "find_text": "Hello",
+    "replace_text": "Hi",
+    "timestamp": "2025-08-17T19:19:01.033731Z"
+  },
+  "hash": "d2d976e456b099f8443e418d77a6eac9c941d9fd98ce9f1a3eba65f65e5483ff"
+}
+{
+  "ts": "2025-08-17T19:19:01.242265Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "a8e06f4b4be1d17c54d2e4305a382daac087863a804f075b63e24f188af22611"
+}
+{
+  "ts": "2025-08-17T19:19:01.245457Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "e5a5e49797ae492aaee5a1c876c9cec715000df16e3e8f1cce8f91882af4e0fa"
+}
+{
+  "ts": "2025-08-17T19:19:07.372194Z",
+  "type": "relaxed_write",
+  "data": {
+    "path": "/home/runner/workspace/workspace/sample.txt"
+  },
+  "hash": "76516ed988d181dc771a773c8224811b5ace38d0e7d45081d062de3a9f6b33f2"
+}
+{
+  "ts": "2025-08-17T19:21:34.941153Z",
+  "type": "relaxed_write",
+  "data": {
+    "path": "/home/runner/workspace/workspace/sample.txt"
+  },
+  "hash": "7a8282397c02b1926dddf30a83a308412a675831af83a4b4a38d52b46ed2ca23"
+}
+{
+  "ts": "2025-08-17T19:21:35.163708Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "e934572d318bcf859ffa4e6cc221a8d17869f24d2b3192e73a3f27f24f3760fc"
+}
+{
+  "ts": "2025-08-17T19:21:35.167925Z",
+  "type": "plan",
+  "data": {
+    "title": "Fix greeting",
+    "target_file": "sample.txt",
+    "find_text": "Hello",
+    "replace_text": "Hi",
+    "timestamp": "2025-08-17T19:21:35.167916Z"
+  },
+  "hash": "358f28418e07ec61a5d2c61b08a35ad0961ef8aba13bf1a1d80c375c67b941c2"
+}
+{
+  "ts": "2025-08-17T19:21:35.375392Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "540a0f2db1b5556d0750d121b6a5c1e43eb86cb6614923e40977a3d7bb14d1a8"
+}
+{
+  "ts": "2025-08-17T19:21:35.379452Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "df635166525e8b83395540b9007f968888ad4e6e0b7f22bbb8ecf2acad77ad1f"
+}
+
+== DIAG ==
+PWD:
+/home/runner/workspace
+FILES:
+./artifacts/last_outputs.txt
+./attached_assets/Pasted-Add-a-tiny-read-only-status-server-so-I-can-share-a-URL-with-my-collaborator-Goal-Serve-a-public-1755457652262_1755457652263.txt
+./attached_assets/Pasted-Fix-bootstrap-so-init-can-create-first-time-files-without-tripping-diff-only-Make-ONLY-these-DIFF-1755456491075_1755456491075.txt
+./attached_assets/Pasted-Please-apply-DIFFS-ONLY-to-fix-a-NameError-and-wire-bootstrap-correctly-Do-not-rename-files-or-chan-1755453322586_1755453322586.txt
+./attached_assets/Pasted-Tighten-two-things-so-apply-succeeds-and-logs-remain-append-only-OUTPUT-DIFFS-ONLY-Do-not-add-fi-1755453947030_1755453947031.txt
+./attached_assets/Pasted--Title-Scaffold-a-Cage-Code-Runner-with-Guardrails-Room-Referee-Logbook-Workbench-Rul-1755450005165_1755450005166.txt
+./attached_assets/Pasted-You-already-finished-the-Cage-code-runner-repo-Now-HARDEN-the-two-remaining-guardrails-and-tighte-1755452114747_1755452114747.txt
+./attached_assets/Pasted-You-already-scaffolded-the-Cage-code-runner-repo-Now-finish-it-by-replacing-every-placeholder-1755451152576_1755451152576.txt
+./attached_assets/Pasted-You-hardened-diff-only-globally-which-blocks-python-run-py-init-from-creating-new-files-Add-a-na-1755452924938_1755452924939.txt
+./cagecore/arc.py
+./cagecore/diffs.py
+./cagecore/executor.py
+./cagecore/__init__.py
+./cagecore/logbook.py
+./cagecore/planner.py
+./cagecore/referee.py
+./cagecore/rehydrator.py
+./cagecore/room.py
+./cagecore/rulebook.py
+./cagecore/tests.py
+./cagecore/voice.py
+./cagecore/workbench.py
+./.git/COMMIT_EDITMSG
+./.git/config
+./.git/description
+./.git/FETCH_HEAD
+./.git/HEAD
+./.git/index
+./.git/ORIG_HEAD
+./LICENSE
+./pyproject.toml
+./.pythonlibs/CACHEDIR.TAG
+./.pythonlibs/.gitignore
+./.pythonlibs/pyvenv.cfg
+./README.md
+./.replit
+./rulebook.json
+./run.py
+./scripts/run_and_log.sh
+./status_server.py
+./trail.log
+./.upm/store.json
+./uv.lock
+./workspace/sample.txt
+STRICT_FLAG:
+False
