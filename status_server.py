@@ -1,11 +1,6 @@
 
 import os, io, time
 from flask import Flask, jsonify, Response
-try:
-    from cagecore import referee
-    STRICT = getattr(referee, "STRICT_MODE", True)
-except Exception:
-    STRICT = None  # unknown
 
 APP = Flask(__name__)
 
@@ -23,10 +18,17 @@ def tail(path, n=20):
 def mtime(path):
     return os.path.getmtime(path) if os.path.exists(path) else None
 
+def get_strict_mode():
+    try:
+        from cagecore import referee
+        return getattr(referee, "STRICT_MODE", True)
+    except Exception:
+        return None  # unknown
+
 @APP.route("/status.json")
 def status_json():
     data = {
-        "strict_mode": STRICT,
+        "strict_mode": get_strict_mode(),
         "trail_tail": tail(TRAIL, 20),
         "trail_mtime": mtime(TRAIL),
         "last_outputs_tail": tail(LAST, 50),
@@ -57,8 +59,9 @@ HTML = """<!doctype html>
 </body></html>"""
 
 def pill():
-    if STRICT is True:  return '<span class="pill ok">STRICT_MODE=True</span>'
-    if STRICT is False: return '<span class="pill warn">STRICT_MODE=False</span>'
+    strict = get_strict_mode()
+    if strict is True:  return '<span class="pill ok">STRICT_MODE=True</span>'
+    if strict is False: return '<span class="pill warn">STRICT_MODE=False</span>'
     return '<span class="pill warn">STRICT_MODE=Unknown</span>'
 
 @APP.route("/")
