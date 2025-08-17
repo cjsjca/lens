@@ -1,0 +1,69 @@
+You already finished the “Cage” code-runner repo. Now HARDEN the two remaining guardrails and tighten the executor. DO NOT change file names, structure, or add deps. OUTPUT DIFFS ONLY.
+
+Non-negotiables to complete now:
+
+A) Referee: active enforcement (cagecore/referee.py)
+1) enforce_diff_only()
+   - Actively ensure writes happen ONLY via the diff path.
+   - Provide a module-level flag in executor (e.g., executor.DIFF_MODE_ACTIVE) that is set True *only* during apply_diff(), and False otherwise.
+   - If any write occurs when that flag is False → raise RuleViolationError and log a violation with exact text:
+     Not allowed. Diff-only and append-only per the rules.
+2) enforce_append_only_log()
+   - In logbook.append(), require mode='a' and verify the file size never shrinks (compare before/after); if shrink or overwrite attempt is detected, raise RuleViolationError and log the violation (same exact text).
+   - Expose a simple check from logbook (e.g., logbook.is_append_only_supported()) that returns True when append path is used and size increased or unchanged.
+
+B) Workbench: route ALL writes through a single gate (cagecore/workbench.py)
+- Implement write_file_guarded(path, new_content) that:
+  1) referee.enforce_workspace_only(path)
+  2) referee.enforce_diff_only()
+  3) Opens file in *read* to get current content size; writes via context that executor sets (see DIFF_MODE_ACTIVE). If DIFF_MODE_ACTIVE is False → violation.
+- Ensure no other function in workbench writes to disk.
+
+C) Diffs + Executor (cagecore/diffs.py, cagecore/executor.py)
+1) diffs.create_diff(original, new, filename): keep as is if already working.
+2) diffs.apply_diff(filename, original, new):
+   - Before writing, set executor.DIFF_MODE_ACTIVE = True
+   - Call workbench.write_file_guarded(filename, patched_text)
+   - Finally, set executor.DIFF_MODE_ACTIVE = False (use try/finally to guarantee reset)
+3) executor.apply_latest_plan():
+   - Never write raw content; only via diffs.apply_diff()
+   - On test failure, revert by writing original BACK THROUGH THE SAME DIFF GATE (i.e., also under DIFF_MODE_ACTIVE True inside a try/finally) to maintain invariants.
+   - Log `diff`, `apply_result`, `tests`, `revert` as appropriate.
+
+D) Logbook (cagecore/logbook.py)
+- In append(), open trail.log with 'a', get size_before, write one JSON line, flush+fsync, get size_after, assert size_after >= size_before and line ended with '\n'.
+- Provide logbook.guard_append_only() that referee.enforce_append_only_log() can call; on failure → violation (exact text above).
+
+E) Run path sanity (run.py)
+- Before any plan/apply/publish, call rehydrator.rehydrate() once per process if not already.
+- When a violation is raised anywhere, print EXACTLY:
+  Not allowed. Diff-only and append-only per the rules.
+  and exit non-zero.
+
+Acceptance checks (must pass locally in Replit shell):
+1) Happy path
+   python run.py init
+   python run.py plan "Fix greeting" --file sample.txt --replace "Hello" --with "Hi"
+   python run.py apply
+   python run.py show-log
+   → shows room_ready, plan, diff, tests, apply_result; file updated.
+
+2) Double apply should fail (plan-then-act)
+   python run.py apply
+   → prints EXACT violation string and logs a violation.
+
+3) Outside workspace should fail
+   python run.py plan "Escape" --file ../oops.txt --replace "x" --with "y"
+   python run.py apply
+   → prints EXACT violation string and logs a violation.
+
+4) Append-only enforced
+   - After one successful apply, check that trail.log size only ever increases across commands; if any command tries to truncate or rewrite, a violation is raised and logged.
+
+5) Diff-only enforced
+   - Temporarily add a code path that would “raw write” (if any remains) to confirm it now triggers the violation. Remove test code after confirming.
+
+Scope discipline:
+- Keep patches minimal; do not refactor unrelated code; do not add new modules.
+- All user-visible text remains short (Maxim + Threadline). Only the exact violation string is printed verbatim.
+- OUTPUT DIFFS ONLY for each file you modify.
