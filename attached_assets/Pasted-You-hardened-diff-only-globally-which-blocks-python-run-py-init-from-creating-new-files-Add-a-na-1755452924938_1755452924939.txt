@@ -1,0 +1,56 @@
+You hardened diff-only globally, which blocks `python run.py init` from creating new files. Add a narrowly-scoped bootstrap path that ONLY allows writes during init when the target file does not yet exist. OUTPUT DIFFS ONLY.
+
+Changes:
+
+A) referee.py
+- Add a module flag: BOOTSTRAP_MODE = False
+- Add context manager:
+    from contextlib import contextmanager
+    @contextmanager
+    def allow_bootstrap():
+        global BOOTSTRAP_MODE
+        old = BOOTSTRAP_MODE
+        BOOTSTRAP_MODE = True
+        try:
+            yield
+        finally:
+            BOOTSTRAP_MODE = old
+- Modify enforce_diff_only():
+    - If BOOTSTRAP_MODE is True: allow ONLY when the target path does not exist yet (workbench will pass the path). Otherwise, same behavior as before (require executor.DIFF_MODE_ACTIVE).
+    - Keep violation message identical on failure.
+
+B) workbench.py
+- Add: def bootstrap_write(path: Path, content: str):
+    - referee.enforce_workspace_only(path)
+    - Reject if path already exists -> violation
+    - Call referee.enforce_diff_only(path=path)  # pass the path so referee can allow bootstrap for new files
+    - Open with 'x' (create-only) and write content.
+- Update write_file_guarded(...) signature to accept optional path parameter for referee.enforce_diff_only(path=path).
+
+C) logbook.py
+- ensure_exists(): when creating a new trail.log, use workbench.bootstrap_write(...) with empty string (or a single trailing newline as you prefer).
+- append(): unchanged except ensure guard_append_only() is still called after writes.
+
+D) rulebook.py
+- init_if_missing(): use workbench.bootstrap_write(...) to create rulebook.json if missing (with the default JSON structure).
+
+E) run.py
+- In `init` command:
+  - Use `with referee.allow_bootstrap():`
+      - create workspace/ if missing
+      - bootstrap_write workspace/sample.txt with a small greeting
+      - rulebook.init_if_missing()
+      - logbook.ensure_exists()
+  - Then log `room_ready` (normal append path)
+
+Acceptance checks to re-run:
+1) python run.py init
+   - Should succeed (Maxim + Threadline), create workspace/sample.txt, rulebook.json, trail.log, and log `room_ready`.
+2) python run.py plan "Fix greeting" --file sample.txt --replace "Hello" --with "Hi"
+3) python run.py apply
+4) python run.py show-log
+5) python run.py apply       # exact violation string
+6) python run.py plan "Escape" --file ../oops.txt --replace "x" --with "y"
+   python run.py apply       # exact violation string
+
+Keep all other guardrails unchanged. Do not allow bootstrap to overwrite any existing file. OUTPUT DIFFS ONLY.
