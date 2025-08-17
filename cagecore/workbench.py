@@ -33,30 +33,11 @@ def read_file(filename):
     return path.read_text(encoding="utf-8")
 
 
-def bootstrap_write(path, content):
-    """Bootstrap write for new files only during init"""
-    if isinstance(path, str):
-        file_path = get_workspace_path(path)
-    else:
-        file_path = path
-
-    # Enforce workspace-only writes
+def bootstrap_write(rel_path: str, content: str) -> None:
+    file_path: Path = room.workspace_path() / rel_path
     referee.enforce_workspace_only(file_path)
-
-    # Reject if path already exists
-    if file_path.exists():
-        violation_msg = "Not allowed. Diff-only and append-only per the rules."
-        logbook.append("violation", {"message": violation_msg})
-        raise referee.RuleViolationError(violation_msg)
-
-    # Enforce diff-only with path for bootstrap check
-    referee.enforce_diff_only(path=file_path)
-
-    # Create parent directories if needed
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write with create-only mode
-    with open(file_path, 'x', encoding='utf-8') as f:
+    referee.enforce_diff_only(path=file_path)  # will allow only if not exists
+    with open(file_path, "x", encoding="utf-8") as f:  # create-only
         f.write(content)
 
 

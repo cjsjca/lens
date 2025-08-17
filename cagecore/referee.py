@@ -1,12 +1,12 @@
 """
 Referee (rule checks)
-Enforces all cage rules and violations.
+Enforces all cage guardrails and constraints.
 """
 
-from . import logbook
-from . import executor
-from pathlib import Path
 from contextlib import contextmanager
+from typing import Optional
+from pathlib import Path
+from . import room, logbook, planner, executor
 
 
 class RuleViolationError(Exception):

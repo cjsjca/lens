@@ -11,7 +11,7 @@ from pathlib import Path
 # Add the current directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from cagecore import room, referee, logbook, workbench, rulebook, voice, planner, executor, tests, rehydrator
+from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator
 
 
 def main():
@@ -73,26 +73,14 @@ def main():
 
 def cmd_init():
     """Initialize the cage environment"""
+    room.ensure_dirs()
     with referee.allow_bootstrap():
-        # Create directories
-        room.ensure_directories()
-
-        # Create sample file
-        sample_path = workbench.get_workspace_path("sample.txt")
-        if not sample_path.exists():
-            workbench.bootstrap_write("sample.txt", "Hello, welcome to the cage!")
-
-        # Create rulebook if missing
+        workbench.bootstrap_write("sample.txt", "Hello, welcome to the cage!")
         rulebook.init_if_missing()
-
-        # Touch log file
         logbook.ensure_exists()
-
-    # Log the initialization (normal append path)
-    logbook.append("room_ready", {"action": "initialized", "files_created": ["workspace/sample.txt", "rulebook.json", "trail.log"]})
-
-    print(voice.maxim_threadline("Cage initialized successfully.",
-                                "The room is ready with workspace, rulebook, and logging in place."))
+    logbook.append("room_ready", {"workspace": str(room.workspace_path())})
+    print(voice.maxim("Room ready."))
+    print(voice.threadline("Workspace, rulebook, and logbook are set."))
 
 
 def cmd_plan(title, filename, find_text, replace_text):
