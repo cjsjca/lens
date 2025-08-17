@@ -40,10 +40,10 @@ HTML = """<!doctype html>
 <meta http-equiv="refresh" content="5">
 <title>Lens Status</title>
 <style>
- body { font: 14px/1.4 system-ui, sans-serif; margin: 24px; }
- pre { background:#111; color:#eee; padding:12px; border-radius:8px; overflow:auto; }
- .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; }
- .ok { background:#0b4; color:#fff; } .warn { background:#c60; color:#fff; }
+ body {{ font: 14px/1.4 system-ui, sans-serif; margin: 24px; }}
+ pre {{ background:#111; color:#eee; padding:12px; border-radius:8px; overflow:auto; }}
+ .pill {{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; }}
+ .ok {{ background:#0b4; color:#fff; }} .warn {{ background:#c60; color:#fff; }}
 </style></head><body>
 <h1>Lens Status</h1>
 <p>Strict mode:
