@@ -36,7 +36,7 @@ def read_file(filename):
 def bootstrap_write(rel_path: str, content: str) -> None:
     file_path: Path = room.workspace_path() / rel_path
     referee.enforce_workspace_only(file_path)
-    referee.enforce_diff_only(path=file_path)  # will allow only if not exists
+    referee.enforce_diff_only(path=file_path)  # allowed only if file does NOT exist (bootstrap)
     with open(file_path, "x", encoding="utf-8") as f:  # create-only
         f.write(content)
 

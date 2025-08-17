@@ -23,14 +23,14 @@ STRICT_MODE = False
 
 @contextmanager
 def allow_bootstrap():
-    """Context manager to temporarily allow bootstrap writes"""
+    """Temporarily allow create-only writes during init."""
     global BOOTSTRAP_MODE
-    old = BOOTSTRAP_MODE
+    prev = BOOTSTRAP_MODE
     BOOTSTRAP_MODE = True
     try:
         yield
     finally:
-        BOOTSTRAP_MODE = old
+        BOOTSTRAP_MODE = prev
 
 
 def enforce_plan_then_act():
@@ -58,19 +58,27 @@ def enforce_workspace_only(path):
         raise RuleViolationError(violation_msg)
 
 
-def enforce_diff_only(path=None):
-    """Ensure writes happen ONLY via the diff path"""
-    if not STRICT_MODE:
-        from . import logbook
-        logbook.append("relaxed_write", {"path": str(path) if path else None})
+def enforce_diff_only(path: Optional[Path] = None) -> None:
+    """
+    Allow writes ONLY when:
+      - BOOTSTRAP_MODE is True AND target does not yet exist (create-only), OR
+      - executor.DIFF_MODE_ACTIVE is True (approved diff application)
+    """
+    if BOOTSTRAP_MODE:
+        if path is None or not isinstance(path, Path):
+            violation_msg = "Not allowed. Diff-only and append-only per the rules."
+            logbook.append("violation", {"message": violation_msg})
+            raise RuleViolationError(violation_msg)
+        if not room.is_path_in_workspace(path):
+            violation_msg = "Not allowed. Diff-only and append-only per the rules."
+            logbook.append("violation", {"message": violation_msg})
+            raise RuleViolationError(violation_msg)
+        if path.exists():
+            violation_msg = "Not allowed. Diff-only and append-only per the rules."
+            logbook.append("violation", {"message": violation_msg})
+            raise RuleViolationError(violation_msg)
         return
-    
-    # Allow bootstrap mode only for new files
-    if BOOTSTRAP_MODE and path is not None:
-        if not path.exists():
-            return  # Allow bootstrap write for new files
-
-    if not executor.DIFF_MODE_ACTIVE:
+    if not getattr(executor, "DIFF_MODE_ACTIVE", False):
         violation_msg = "Not allowed. Diff-only and append-only per the rules."
         logbook.append("violation", {"message": violation_msg})
         raise RuleViolationError(violation_msg)

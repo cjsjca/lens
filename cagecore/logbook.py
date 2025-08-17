@@ -8,14 +8,14 @@ import hashlib
 from datetime import datetime
 import os
 from . import room
+from . import workbench
 
 
 def ensure_exists():
     """Create the trail log if it doesn't exist"""
-    from . import workbench
     trail_path = room.get_trail_log_path()
     if not trail_path.exists():
-        workbench.bootstrap_write(trail_path, "")
+        workbench.bootstrap_write("trail.log", "")
 
 
 def create_entry(entry_type, data):

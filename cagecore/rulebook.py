@@ -5,7 +5,7 @@ Manages user preferences and correction rules.
 
 import json
 from datetime import datetime
-from . import room
+from . import room, workbench
 
 
 def exists():
@@ -29,7 +29,6 @@ def create_default():
 
 def init_if_missing():
     """Initialize rulebook if it doesn't exist using bootstrap write"""
-    from . import workbench
     rulebook_path = room.get_rulebook_path()
 
     if not rulebook_path.exists():
@@ -40,7 +39,7 @@ def init_if_missing():
             },
             "corrections": []
         }
-        workbench.bootstrap_write(rulebook_path, json.dumps(default_rules, indent=2))
+        workbench.bootstrap_write("rulebook.json", json.dumps(default_rules, indent=2))
 
 
 def add_correction(from_text, to_text, note=None):
