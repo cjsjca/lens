@@ -1,0 +1,103 @@
+Please apply DIFFS ONLY to fix a NameError and wire bootstrap correctly. Do not rename files or change structure.
+
+1) cagecore/referee.py — import room/logbook/executor and accept `path` in diff-only check
+
+--- a/cagecore/referee.py
++++ b/cagecore/referee.py
+@@
+-from typing import Optional
++from typing import Optional
++from pathlib import Path
++from . import room, logbook, executor
+@@
+-def enforce_workspace_only(path) -> None:
+-    """Deny any path outside ./workspace."""
+-    # uses room.is_path_in_workspace but room not imported yet
+-    if not room.is_path_in_workspace(path):
++def enforce_workspace_only(path: Path) -> None:
++    """Deny any path outside ./workspace."""
++    if not room.is_path_in_workspace(path):
+         _violate("workspace_only", f"path={path}")
+@@
+-# Diff-only enforcement (stub previously)
+-def enforce_diff_only(path: Optional[str] = None) -> None:
+-    if BOOTSTRAP_MODE:
+-        # allow only when target does NOT exist yet
+-        if path is None:
+-            _violate("diff_only", "bootstrap missing path")
+-        return
+-    # otherwise require executor.DIFF_MODE_ACTIVE
+-    if not getattr(executor, "DIFF_MODE_ACTIVE", False):
+-        _violate("diff_only", "write outside diff-mode")
++def enforce_diff_only(path: Optional[Path] = None) -> None:
++    """
++    Allow writes only when:
++      - BOOTSTRAP_MODE is True AND target path does not exist yet, OR
++      - executor.DIFF_MODE_ACTIVE is True (we are inside apply_diff)
++    Otherwise, raise a violation.
++    """
++    if BOOTSTRAP_MODE:
++        if path is None or isinstance(path, str):
++            _violate("diff_only", "bootstrap missing/invalid path")
++        if path.exists():
++            _violate("diff_only", f"bootstrap refused overwrite: {path}")
++        return
++    if not getattr(executor, "DIFF_MODE_ACTIVE", False):
++        _violate("diff_only", "write outside diff-mode")
+@@
+-def enforce_append_only_log() -> None:
+-    # call into logbook guard; raise if it reports not append-only
+-    if not logbook.guard_append_only():
++def enforce_append_only_log() -> None:
++    """Verify the last append did not shrink/overwrite trail.log."""
++    if not logbook.guard_append_only():
+         _violate("append_only_log", "log append-only guard failed")
+
+2) cagecore/workbench.py — pass Path objects into referee checks, and use bootstrap gate
+
+--- a/cagecore/workbench.py
++++ b/cagecore/workbench.py
+@@
+-from pathlib import Path
+-from . import referee, room
++from pathlib import Path
++from . import referee, room
+@@
+-def bootstrap_write(rel_path: str, content: str) -> None:
+-    file_path = room.workspace_path() / rel_path
+-    referee.enforce_workspace_only(file_path)
+-    referee.enforce_diff_only(path=file_path)
+-    # create-only
+-    if file_path.exists():
+-        referee._violate("diff_only", f"bootstrap refused overwrite: {file_path}")
+-    with open(file_path, "x", encoding="utf-8") as f:
+-        f.write(content)
++def bootstrap_write(rel_path: str, content: str) -> None:
++    file_path: Path = room.workspace_path() / rel_path
++    referee.enforce_workspace_only(file_path)
++    referee.enforce_diff_only(path=file_path)  # will allow only if not exists
++    with open(file_path, "x", encoding="utf-8") as f:  # create-only
++        f.write(content)
+
+3) run.py — ensure init runs under the bootstrap context and uses bootstrap_write
+
+--- a/run.py
++++ b/run.py
+@@
+-from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator
++from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator
+@@
+ def cmd_init():
+-    # may create required files; previously violated diff-only
+-    room.ensure_dirs()
+-    workbench.bootstrap_write("sample.txt", "Hello, welcome to the cage!")
+-    rulebook.init_if_missing()
+-    logbook.ensure_exists()
++    room.ensure_dirs()
++    with referee.allow_bootstrap():
++        workbench.bootstrap_write("sample.txt", "Hello, welcome to the cage!")
++        rulebook.init_if_missing()
++        logbook.ensure_exists()
+     logbook.append("room_ready", {"workspace": str(room.workspace_path())})
+     print(voice.maxim("Room ready."))
+     print(voice.threadline("Workspace, rulebook, and logbook are set."))
