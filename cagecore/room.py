@@ -6,6 +6,29 @@ Manages the safe space where the cage operates.
 
 from pathlib import Path
 
+_ROOT = Path(__file__).resolve().parents[1]
+_WORKSPACE = _ROOT / "workspace"
+_ARTIFACTS = _ROOT / "artifacts"
+
+def root_path() -> Path:
+    return _ROOT
+
+def workspace_path() -> Path:
+    return _WORKSPACE
+
+def artifacts_path() -> Path:
+    return _ARTIFACTS
+
+def is_path_in_workspace(p: Path) -> bool:
+    try:
+        return workspace_path() in p.resolve().parents or p.resolve() == workspace_path()
+    except Exception:
+        return False
+
+def ensure_dirs() -> None:
+    _WORKSPACE.mkdir(parents=True, exist_ok=True)
+    _ARTIFACTS.mkdir(parents=True, exist_ok=True)
+
 # The cage root directory
 CAGE_ROOT = Path(__file__).parent.parent
 WORKSPACE_DIR = CAGE_ROOT / "workspace"

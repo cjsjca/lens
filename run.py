@@ -11,7 +11,7 @@ from pathlib import Path
 # Add the current directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator
+from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator, planner
 
 
 def main():
