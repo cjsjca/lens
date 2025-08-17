@@ -1,0 +1,108 @@
+Fix bootstrap so `init` can create first-time files without tripping diff-only.
+Make ONLY these DIFFS (no new files, no refactors). Output DIFFS ONLY.
+
+1) cagecore/referee.py — real bootstrap gate inside enforce_diff_only
+--- a/cagecore/referee.py
++++ b/cagecore/referee.py
+@@
+-from typing import Optional
++from typing import Optional
++from pathlib import Path
++from contextlib import contextmanager
++from . import room, executor, logbook
+@@
++BOOTSTRAP_MODE = False
++
++@contextmanager
++def allow_bootstrap():
++    """Temporarily allow create-only writes during init."""
++    global BOOTSTRAP_MODE
++    prev = BOOTSTRAP_MODE
++    BOOTSTRAP_MODE = True
++    try:
++        yield
++    finally:
++        BOOTSTRAP_MODE = prev
+@@
+-def enforce_workspace_only(path) -> None:
+-    if not room.is_path_in_workspace(path):
++def enforce_workspace_only(path: Path) -> None:
++    if not room.is_path_in_workspace(path):
+         _violate("workspace_only", f"path={path}")
+@@
+-def enforce_diff_only(path: Optional[str] = None) -> None:
+-    if not getattr(executor, "DIFF_MODE_ACTIVE", False):
+-        _violate("diff_only", "write outside diff-mode")
++def enforce_diff_only(path: Optional[Path] = None) -> None:
++    """
++    Allow writes ONLY when:
++      - BOOTSTRAP_MODE is True AND target does not yet exist (create-only), OR
++      - executor.DIFF_MODE_ACTIVE is True (approved diff application)
++    """
++    if BOOTSTRAP_MODE:
++        if path is None or not isinstance(path, Path):
++            _violate("diff_only", "bootstrap missing/invalid path")
++        if not room.is_path_in_workspace(path):
++            _violate("workspace_only", f"path={path}")
++        if path.exists():
++            _violate("diff_only", f"bootstrap refused overwrite: {path}")
++        return
++    if not getattr(executor, "DIFF_MODE_ACTIVE", False):
++        _violate("diff_only", "write outside diff-mode")
+
+2) cagecore/workbench.py — use create-only open() under bootstrap, still checked
+--- a/cagecore/workbench.py
++++ b/cagecore/workbench.py
+@@
+-from pathlib import Path
+-from . import referee, room
++from pathlib import Path
++from . import referee, room
+@@
+ def bootstrap_write(rel_path: str, content: str) -> None:
+-    file_path = room.workspace_path() / rel_path
+-    referee.enforce_workspace_only(file_path)
+-    referee.enforce_diff_only(path=file_path)
+-    with open(file_path, "w", encoding="utf-8") as f:
+-        f.write(content)
++    file_path: Path = room.workspace_path() / rel_path
++    referee.enforce_workspace_only(file_path)
++    referee.enforce_diff_only(path=file_path)  # allowed only if file does NOT exist (bootstrap)
++    with open(file_path, "x", encoding="utf-8") as f:  # create-only
++        f.write(content)
+
+3) cagecore/rulebook.py — create via bootstrap
+--- a/cagecore/rulebook.py
++++ b/cagecore/rulebook.py
+@@
+-from . import room
++from . import room, workbench
+ import json, os
+@@
+ def init_if_missing():
+     path = room.workspace_path() / "rulebook.json"
+-    if not os.path.exists(path):
+-        with open(path, "w", encoding="utf-8") as f:
+-            json.dump({"preferences": {}, "guardrails": {}}, f, ensure_ascii=False, indent=2)
++    if not os.path.exists(path):
++        workbench.bootstrap_write(
++            "rulebook.json",
++            json.dumps({"preferences": {}, "guardrails": {}}, ensure_ascii=False, indent=2)
++        )
+
+4) cagecore/logbook.py — create via bootstrap
+--- a/cagecore/logbook.py
++++ b/cagecore/logbook.py
+@@
+-from . import room
++from . import room, workbench
+@@
+ def ensure_exists():
+     global _LOG_PATH
+     if _LOG_PATH is None:
+         _LOG_PATH = room.workspace_path() / "trail.log"
+-    if not os.path.exists(_LOG_PATH):
+-        with open(_LOG_PATH, "w", encoding="utf-8") as f:
+-            f.write("")
++    if not os.path.exists(_LOG_PATH):
++        workbench.bootstrap_write("trail.log", "")
