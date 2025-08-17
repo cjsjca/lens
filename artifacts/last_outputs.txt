@@ -1,0 +1,405 @@
+== python run.py init ==
+
+== plan ==
+Plan 'Fix greeting' recorded.
+
+Will replace 'Hello' with 'Hi' in sample.txt.
+
+== apply ==
+Not allowed. Diff-only and append-only per the rules.
+
+== show-log ==
+{
+  "ts": "2025-08-17T17:41:40.940283Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "9a6edd12e80dda9039839fce4385da7f5bd85253fdcacee33c319e02a05e9390"
+}
+{
+  "ts": "2025-08-17T17:57:15.445289Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 1
+  },
+  "hash": "274624384d51ebd99837d12a8066d312552378c28e4eec0c4f046523fe531452"
+}
+{
+  "ts": "2025-08-17T17:57:15.548462Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "15289c0e835b7066476d825c930a60058b8f2cda03671d59ea4a1cb745d44d31"
+}
+{
+  "ts": "2025-08-17T17:57:15.714255Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "256cfe120f737607298fbe36c42c58bbdb57b52b85cba021b77bc5e0313d96ea"
+}
+{
+  "ts": "2025-08-17T17:57:15.798276Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 4
+  },
+  "hash": "2a94e0473bdbecc8e105494660c7349e9f90951521e26766bd9a1344e0241cec"
+}
+{
+  "ts": "2025-08-17T17:57:15.889272Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "e6470c59f0c6e744ba0e5bf1a83c93eb5cbd1518a0028e76ecefdefde6815205"
+}
+{
+  "ts": "2025-08-17T18:02:18.524420Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "60624b9e78769beb39e4adb5cf19aac5e4123750d0f87fde01825ed6a1a7c643"
+}
+{
+  "ts": "2025-08-17T18:02:18.652475Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 7
+  },
+  "hash": "8f5f95d97cc91a9893a9fbf12b8fd2da829bcca006cd4adf05ccd5c649667aa1"
+}
+{
+  "ts": "2025-08-17T18:02:18.655606Z",
+  "type": "plan",
+  "data": {
+    "title": "Fix greeting",
+    "target_file": "sample.txt",
+    "find_text": "Hello",
+    "replace_text": "Hi",
+    "timestamp": "2025-08-17T18:02:18.655599Z"
+  },
+  "hash": "70b7926a340d5feddd28e85bfe42e091e8b33f6cff42030f9c7b8822efc7c92f"
+}
+{
+  "ts": "2025-08-17T18:02:18.764905Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "488f936a58e167f95ebbc131bda6029f577ded456e039c55ed499563a7881b2a"
+}
+{
+  "ts": "2025-08-17T18:02:18.976347Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "ca9ea6ffdfee7379b82b6b689f28bb92424e4267e5587568a73bdad62658a14e"
+}
+{
+  "ts": "2025-08-17T18:02:19.081383Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "ebd608636894292515be6356398aebc2322260e1bf435e882bcab88b42d7631e"
+}
+{
+  "ts": "2025-08-17T18:02:19.084885Z",
+  "type": "plan",
+  "data": {
+    "title": "Escape",
+    "target_file": "../oops.txt",
+    "find_text": "x",
+    "replace_text": "y",
+    "timestamp": "2025-08-17T18:02:19.084852Z"
+  },
+  "hash": "a31b2a6ef0ffc2797a2995edfb8225832a8576c32be65448e1ac1c6f0e04134a"
+}
+{
+  "ts": "2025-08-17T18:02:19.196189Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "62306347bdb9d10c5ec9410f8e2b436548058a75a9f14ea89666cf854d3371f3"
+}
+{
+  "ts": "2025-08-17T18:06:52.797357Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "ca8041239683e787449a9877b96bbc508f96d413383489c2f29ae9413e36bab1"
+}
+{
+  "ts": "2025-08-17T18:08:26.156912Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "e601c93995939cf317903107b4bcafcb3f585e4a26c17b5f6917c71e466743cc"
+}
+{
+  "ts": "2025-08-17T18:08:26.259876Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "e4a3428af12527bd521ef1abd7b39683720c226a77f3a73f6cd3f9964ac2ae9d"
+}
+{
+  "ts": "2025-08-17T18:08:26.264161Z",
+  "type": "plan",
+  "data": {
+    "title": "Fix greeting",
+    "target_file": "sample.txt",
+    "find_text": "Hello",
+    "replace_text": "Hi",
+    "timestamp": "2025-08-17T18:08:26.264151Z"
+  },
+  "hash": "3571d6dfe206d9202a4de18a06d42484782e1010964465e4722f9c16c2103811"
+}
+{
+  "ts": "2025-08-17T18:08:26.347449Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "4c8b143557579c967e7ff8e67b6aa473c26849b18ee0860fbf82b2aac5e5fa0a"
+}
+{
+  "ts": "2025-08-17T18:08:26.356919Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "277e85f1838c1937949bbda2ffd6c037c6249dea9c1b00d212e50c1fc6e4eddb"
+}
+{
+  "ts": "2025-08-17T18:08:26.512003Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "5b4d91a6aabbd4c5bb2f12f5ee416573e51779a4f6bfb75f86a977a9620e0167"
+}
+{
+  "ts": "2025-08-17T18:08:26.519516Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "b3b19188152984d85ab33d3d27734a62c4c7cb56bf020806a1f252716f79f2ed"
+}
+{
+  "ts": "2025-08-17T18:08:26.598703Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "fadeac4f68adb7019b9cc68ce34c5b399c4ef32f461e2fce40a50a1d72ac7b9d"
+}
+{
+  "ts": "2025-08-17T18:08:26.607529Z",
+  "type": "plan",
+  "data": {
+    "title": "Escape",
+    "target_file": "../oops.txt",
+    "find_text": "x",
+    "replace_text": "y",
+    "timestamp": "2025-08-17T18:08:26.607519Z"
+  },
+  "hash": "18e974900ce3b87abf30c044d870a438fa7439cb603172f22437599679d76a58"
+}
+{
+  "ts": "2025-08-17T18:08:26.693466Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "1dbde98ef50a08b3945b924f10c55ae3bfcff5cebb88d356838935ee15170bc3"
+}
+{
+  "ts": "2025-08-17T18:08:26.696808Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "88c5d248fbc5c1663aaa37bd4a6748c945b6f41665a947040f323c3438fc5c8b"
+}
+{
+  "ts": "2025-08-17T18:29:37.783234Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "a915c360bf58405b50d1ab1e63521df535ea427012e1956a7f7f0ea46c1a377f"
+}
+{
+  "ts": "2025-08-17T18:30:40.803864Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "c96777ab61cb54a05a99b56c9385e0615546b6ca37dd74c005848b4f649be430"
+}
+{
+  "ts": "2025-08-17T18:30:50.552332Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "dbb6d53690f4fe3df96fb22a698787a846d6983e00a265c0df1006c09db98785"
+}
+{
+  "ts": "2025-08-17T18:39:57.097341Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "fbde6b50f9c16e2a08dcc544b0d7763263e49e2910eb06ec6498ed1a4a898e0a"
+}
+{
+  "ts": "2025-08-17T18:41:37.693420Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "01c8e03aff5068a11eb0a1269f4097ef54a3c8f40dc661c85db3f2a2c5d5936b"
+}
+{
+  "ts": "2025-08-17T18:41:38.441788Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "7572d450a0a24e8aca27e68d781021be6ee74c47a8d885a085af2bdf07a8cc1c"
+}
+{
+  "ts": "2025-08-17T18:41:38.449960Z",
+  "type": "plan",
+  "data": {
+    "title": "Fix greeting",
+    "target_file": "sample.txt",
+    "find_text": "Hello",
+    "replace_text": "Hi",
+    "timestamp": "2025-08-17T18:41:38.449949Z"
+  },
+  "hash": "ad841669be763f55073b3d896c4f23ba05a8307c7d16823f60fe9bfc3df77a26"
+}
+{
+  "ts": "2025-08-17T18:41:39.351467Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "419b1a27746f3d03294d0394792a745c76f3b77095f8c7333520fba1751e04d0"
+}
+{
+  "ts": "2025-08-17T18:41:39.394732Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "acbd6b70b8973e0932d2c747d0cf45d3b518f0618675eb6608f038995911db46"
+}
+{
+  "ts": "2025-08-17T19:08:24.774645Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "2a3c26ce99073687c6504d6a701a480a04208aa536cafe795a807fc6066d4e03"
+}
+{
+  "ts": "2025-08-17T19:09:54.801602Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "6842250e42757a37fb5fd42f85d69d1a807469257bff47cd6477beee703fb0aa"
+}
+{
+  "ts": "2025-08-17T19:09:57.440592Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "87374b62a0cc1ad2cbad1fc4cea3f7685dba99fb6ba0d036d08f90ad78ea6b3d"
+}
+{
+  "ts": "2025-08-17T19:11:47.433590Z",
+  "type": "relaxed_write",
+  "data": {
+    "path": "/home/runner/workspace/workspace/sample.txt"
+  },
+  "hash": "db6a86bf13d2929ea8de59e6530174e2332002160b5cf84f275afa758607af55"
+}
+{
+  "ts": "2025-08-17T19:11:47.637898Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "62bfafc36f651eeacefce32a01c4cc3bffa386254721dcb2030841f313b493f2"
+}
+{
+  "ts": "2025-08-17T19:11:47.643795Z",
+  "type": "plan",
+  "data": {
+    "title": "Fix greeting",
+    "target_file": "sample.txt",
+    "find_text": "Hello",
+    "replace_text": "Hi",
+    "timestamp": "2025-08-17T19:11:47.643784Z"
+  },
+  "hash": "050cd8c9520efde177dd0ae60df45cc3bd5fa7972e3d27df557f556d539faffb"
+}
+{
+  "ts": "2025-08-17T19:11:47.843149Z",
+  "type": "rehydrate",
+  "data": {
+    "preferences_loaded": 1,
+    "corrections_loaded": 0,
+    "recent_entries_loaded": 10
+  },
+  "hash": "ed579d5f40713200272cf21870184f65c719bb826e60dca68239ba10d600b500"
+}
+{
+  "ts": "2025-08-17T19:11:47.846342Z",
+  "type": "violation",
+  "data": {
+    "message": "Not allowed. Diff-only and append-only per the rules."
+  },
+  "hash": "211c2806bc962a8b095f5ad3f332d2d55091cb3a7cab1f0f05678bc0cbdba1d3"
+}
