@@ -4,7 +4,7 @@ Handles creation and application of unified diff patches.
 """
 
 import difflib
-from . import workbench
+from . import workbench, executor
 
 
 def create_diff(original_content, new_content, filename):
