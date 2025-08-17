@@ -1,4 +1,3 @@
-
 """
 Workbench (controlled file IO under ./workspace)
 Provides safe file operations within the workspace boundary.
@@ -24,33 +23,39 @@ def read_file(filename):
     """Read a file from the workspace"""
     path = get_workspace_path(filename)
     referee.enforce_workspace_only(path)
-    
+
     if not path.exists():
         return ""
-    
+
     return path.read_text(encoding="utf-8")
 
 
+def write_file_guarded(filename, content):
+    """Write content to a file in the workspace with full enforcement"""
+    file_path = get_workspace_path(filename)
+    referee.enforce_workspace_only(str(file_path))
+    referee.enforce_diff_only()
+
+    try:
+        file_path.write_text(content, encoding='utf-8')
+    except Exception as e:
+        raise IOError(f"Failed to write file {filename}: {e}")
+
+
 def write_file(filename, content):
-    """Write a file to the workspace"""
-    path = get_workspace_path(filename)
-    referee.enforce_workspace_only(path)
-    
-    # Ensure parent directory exists
-    path.parent.mkdir(parents=True, exist_ok=True)
-    
-    path.write_text(content, encoding="utf-8")
+    """Legacy write function - redirects to guarded version"""
+    write_file_guarded(filename, content)
 
 
 def list_files():
     """List all files in the workspace"""
     workspace_dir = room.get_workspace_dir()
     files = []
-    
+
     if workspace_dir.exists():
         for path in workspace_dir.rglob("*"):
             if path.is_file():
                 relative_path = path.relative_to(workspace_dir)
                 files.append(str(relative_path))
-    
+
     return files

@@ -1,4 +1,3 @@
-
 """
 Referee (rule checks)
 Enforces the cage rules and prevents violations.
@@ -16,35 +15,43 @@ VIOLATION_MESSAGE = "Not allowed. Diff-only and append-only per the rules."
 
 
 def enforce_plan_then_act():
-    """Ensure a plan exists before allowing action"""
+    """Ensure there is a plan before acting"""
     if not planner.has_current_plan():
-        logbook.append("violation", {"rule": "plan_then_act", "message": VIOLATION_MESSAGE})
-        raise RuleViolationError(VIOLATION_MESSAGE)
-
-
-def enforce_diff_only():
-    """Ensure only diff-based operations are used"""
-    # This is enforced by the executor module - whole file writes are not allowed
-    pass
-
-
-def enforce_workspace_only(path):
-    """Ensure path is within workspace"""
-    if not room.is_path_in_workspace(path):
-        logbook.append("violation", {"rule": "workspace_only", "path": str(path), "message": VIOLATION_MESSAGE})
-        raise RuleViolationError(VIOLATION_MESSAGE)
+        violation_msg = "Not allowed. Diff-only and append-only per the rules."
+        logbook.append("violation", {"message": violation_msg})
+        raise RuleViolationError(violation_msg)
 
 
 def enforce_rehydrate_before_act():
-    """Ensure rehydration has happened this session"""
-    # This is checked by tracking rehydration in the rehydrator module
+    """Ensure rehydration has occurred before acting"""
     from . import rehydrator
     if not rehydrator.is_rehydrated():
-        logbook.append("violation", {"rule": "rehydrate_before_act", "message": VIOLATION_MESSAGE})
-        raise RuleViolationError(VIOLATION_MESSAGE)
+        violation_msg = "Not allowed. Diff-only and append-only per the rules."
+        logbook.append("violation", {"message": violation_msg})
+        raise RuleViolationError(violation_msg)
+
+
+def enforce_workspace_only(path):
+    """Ensure operations only happen within the workspace"""
+    if not room.is_path_in_workspace(path):
+        violation_msg = "Not allowed. Diff-only and append-only per the rules."
+        logbook.append("violation", {"message": violation_msg})
+        raise RuleViolationError(violation_msg)
+
+
+def enforce_diff_only():
+    """Ensure changes are only made through diffs"""
+    from . import executor
+    if not executor.DIFF_MODE_ACTIVE:
+        violation_msg = "Not allowed. Diff-only and append-only per the rules."
+        logbook.append("violation", {"message": violation_msg})
+        raise RuleViolationError(violation_msg)
 
 
 def enforce_append_only_log():
-    """Ensure log is only appended to, never edited"""
-    # This is enforced by the logbook module design
-    pass
+    """Ensure log entries are only appended, never modified"""
+    from . import logbook
+    if not logbook.guard_append_only():
+        violation_msg = "Not allowed. Diff-only and append-only per the rules."
+        logbook.append("violation", {"message": violation_msg})
+        raise RuleViolationError(violation_msg)
