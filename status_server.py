@@ -1,6 +1,8 @@
-import os, io, time, sys, json
-from flask import Flask, jsonify, Response
+
+import os, io, time, sys, json, hashlib, subprocess
+from flask import Flask, jsonify, Response, request
 from datetime import datetime
+from pathlib import Path
 
 APP = Flask(__name__)
 SERVER_START_TIME = datetime.utcnow().isoformat() + "Z"
@@ -13,6 +15,55 @@ def trail_path():
     return ART1 if os.path.exists(ART1) else ART2
 
 LAST = os.path.join(ART_DIR, "last_outputs.txt")
+
+# Whitelist for audit endpoints
+AUDIT_WHITELIST = {
+    "run.py",
+    "status_server.py", 
+    "trail.log",
+    "atoms.jsonl",
+    "links.jsonl",
+    "README.md",
+    "requirements.txt"
+}
+
+def is_whitelisted(path):
+    """Check if path is in whitelist or under cagecore/ or artifacts/"""
+    if path in AUDIT_WHITELIST:
+        return True
+    if path.startswith("cagecore/") or path.startswith("artifacts/"):
+        return True
+    return False
+
+def get_repo_url():
+    """Try to get git remote URL"""
+    try:
+        result = subprocess.run(['git', 'remote', 'get-url', 'origin'], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except:
+        pass
+    return 'none'
+
+def get_last_commit():
+    """Try to get last commit hash"""
+    try:
+        result = subprocess.run(['git', 'rev-parse', 'HEAD'], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            return result.stdout.strip()[:8]
+    except:
+        pass
+    return 'none'
+
+def get_file_sha256(filepath):
+    """Get SHA256 hash of file"""
+    try:
+        with open(filepath, 'rb') as f:
+            return hashlib.sha256(f.read()).hexdigest()
+    except:
+        return 'error'
 
 def tail(path, n=20):
     if not os.path.exists(path):
@@ -90,6 +141,76 @@ def get_relevant_files():
 
     return files
 
+@APP.route("/files")
+def files_index():
+    """List whitelisted files with metadata"""
+    output = ["BEGIN-FILES"]
+    
+    # Get all files in current directory and subdirectories
+    for root, dirs, files in os.walk("."):
+        # Skip hidden directories and __pycache__
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d != '__pycache__']
+        
+        for file in files:
+            rel_path = os.path.relpath(os.path.join(root, file), ".")
+            rel_path = rel_path.replace(os.sep, "/")  # normalize to forward slashes
+            
+            if is_whitelisted(rel_path):
+                try:
+                    size = os.path.getsize(rel_path)
+                    sha256_full = get_file_sha256(rel_path)
+                    sha256_8 = sha256_full[:8] if sha256_full != 'error' else 'error'
+                    url = f"/file?path={rel_path}"
+                    output.append(f"{rel_path}  {size}  {sha256_8}  {url}")
+                except:
+                    output.append(f"{rel_path}  error  error  /file?path={rel_path}")
+    
+    output.append("END-FILES")
+    return Response("\n".join(output), mimetype="text/plain")
+
+@APP.route("/file")
+def file_view():
+    """View individual file content"""
+    path = request.args.get('path', '')
+    
+    if not path or not is_whitelisted(path):
+        return Response("File not whitelisted", status=403, mimetype="text/plain")
+    
+    if not os.path.exists(path):
+        return Response("File not found", status=404, mimetype="text/plain")
+    
+    try:
+        size = os.path.getsize(path)
+        sha256_full = get_file_sha256(path)
+        
+        # Read file content
+        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        
+        # Truncate if over 100KB
+        max_size = 100 * 1024  # 100KB
+        truncated = False
+        if len(content.encode('utf-8')) > max_size:
+            # Truncate to approximately 100KB
+            content = content[:max_size] 
+            content += "\n[TRUNCATED]"
+            truncated = True
+        
+        output = [
+            "BEGIN-FILE",
+            f"path={path}",
+            f"size={size}  sha256={sha256_full}",
+            "----8<---- CONTENT START",
+            content,
+            "----8<---- CONTENT END",
+            "END-FILE"
+        ]
+        
+        return Response("\n".join(output), mimetype="text/plain")
+        
+    except Exception as e:
+        return Response(f"Error reading file: {str(e)}", status=500, mimetype="text/plain")
+
 @APP.route("/status.json")
 def status_json():
     data = {
@@ -124,6 +245,15 @@ def index():
 
     # Build plain text response
     output = []
+
+    # Audit links section
+    output.append("BEGIN-AUDIT-LINKS")
+    output.append(f"REPO-URL: {get_repo_url()}")
+    output.append("FILES-INDEX: /files")
+    output.append("FILE-VIEW-EXAMPLE: /file?path=run.py")
+    output.append(f"LAST-COMMIT: {get_last_commit()}")
+    output.append("END-AUDIT-LINKS")
+    output.append("")
 
     # Mode section
     output.append("BEGIN-MODE")
