@@ -5,6 +5,9 @@ Provides safe file operations within the workspace boundary.
 
 from pathlib import Path
 from . import room, referee
+import logging
+
+logbook = logging.getLogger("logbook")
 
 
 def get_workspace_path(filename):
@@ -30,16 +33,46 @@ def read_file(filename):
     return path.read_text(encoding="utf-8")
 
 
-def write_file_guarded(filename, content):
-    """Write content to a file in the workspace with full enforcement"""
-    file_path = get_workspace_path(filename)
-    referee.enforce_workspace_only(str(file_path))
-    referee.enforce_diff_only()
+def bootstrap_write(path, content):
+    """Bootstrap write for new files only during init"""
+    if isinstance(path, str):
+        file_path = get_workspace_path(path)
+    else:
+        file_path = path
 
-    try:
-        file_path.write_text(content, encoding='utf-8')
-    except Exception as e:
-        raise IOError(f"Failed to write file {filename}: {e}")
+    # Enforce workspace-only writes
+    referee.enforce_workspace_only(file_path)
+
+    # Reject if path already exists
+    if file_path.exists():
+        violation_msg = "Not allowed. Diff-only and append-only per the rules."
+        logbook.append("violation", {"message": violation_msg})
+        raise referee.RuleViolationError(violation_msg)
+
+    # Enforce diff-only with path for bootstrap check
+    referee.enforce_diff_only(path=file_path)
+
+    # Create parent directories if needed
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write with create-only mode
+    with open(file_path, 'x', encoding='utf-8') as f:
+        f.write(content)
+
+
+def write_file_guarded(path, new_content):
+    """Guarded file write that enforces all rules"""
+    file_path = get_workspace_path(path)
+
+    # Enforce workspace-only writes
+    referee.enforce_workspace_only(file_path)
+
+    # Enforce diff-only writes
+    referee.enforce_diff_only(path=file_path)
+
+    # Write the content
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(new_content)
 
 
 def write_file(filename, content):

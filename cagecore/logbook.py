@@ -12,9 +12,10 @@ from . import room
 
 def ensure_exists():
     """Create the trail log if it doesn't exist"""
+    from . import workbench
     trail_path = room.get_trail_log_path()
     if not trail_path.exists():
-        trail_path.touch()
+        workbench.bootstrap_write(trail_path, "")
 
 
 def create_entry(entry_type, data):

@@ -73,22 +73,22 @@ def main():
 
 def cmd_init():
     """Initialize the cage environment"""
-    # Create directories
-    room.ensure_directories()
+    with referee.allow_bootstrap():
+        # Create directories
+        room.ensure_directories()
 
-    # Touch log file first
-    logbook.ensure_exists()
+        # Create sample file
+        sample_path = workbench.get_workspace_path("sample.txt")
+        if not sample_path.exists():
+            workbench.bootstrap_write("sample.txt", "Hello, welcome to the cage!")
 
-    # Create rulebook if missing
-    if not rulebook.exists():
-        rulebook.create_default()
+        # Create rulebook if missing
+        rulebook.init_if_missing()
 
-    # Create sample file
-    sample_path = workbench.get_workspace_path("sample.txt")
-    if not sample_path.exists():
-        workbench.write_file("sample.txt", "Hello, welcome to the cage!")
+        # Touch log file
+        logbook.ensure_exists()
 
-    # Log the initialization
+    # Log the initialization (normal append path)
     logbook.append("room_ready", {"action": "initialized", "files_created": ["workspace/sample.txt", "rulebook.json", "trail.log"]})
 
     print(voice.maxim_threadline("Cage initialized successfully.",

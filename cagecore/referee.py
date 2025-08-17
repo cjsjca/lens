@@ -1,9 +1,12 @@
 """
 Referee (rule checks)
-Enforces the cage rules and prevents violations.
+Enforces all cage rules and violations.
 """
 
-from . import room, logbook, planner
+from . import logbook
+from . import executor
+from pathlib import Path
+from contextlib import contextmanager
 
 
 class RuleViolationError(Exception):
@@ -11,7 +14,20 @@ class RuleViolationError(Exception):
     pass
 
 
-VIOLATION_MESSAGE = "Not allowed. Diff-only and append-only per the rules."
+# Module flag for bootstrap mode
+BOOTSTRAP_MODE = False
+
+
+@contextmanager
+def allow_bootstrap():
+    """Context manager to temporarily allow bootstrap writes"""
+    global BOOTSTRAP_MODE
+    old = BOOTSTRAP_MODE
+    BOOTSTRAP_MODE = True
+    try:
+        yield
+    finally:
+        BOOTSTRAP_MODE = old
 
 
 def enforce_plan_then_act():
@@ -39,9 +55,13 @@ def enforce_workspace_only(path):
         raise RuleViolationError(violation_msg)
 
 
-def enforce_diff_only():
-    """Ensure changes are only made through diffs"""
-    from . import executor
+def enforce_diff_only(path=None):
+    """Ensure writes happen ONLY via the diff path"""
+    # Allow bootstrap mode only for new files
+    if BOOTSTRAP_MODE and path is not None:
+        if not path.exists():
+            return  # Allow bootstrap write for new files
+
     if not executor.DIFF_MODE_ACTIVE:
         violation_msg = "Not allowed. Diff-only and append-only per the rules."
         logbook.append("violation", {"message": violation_msg})
