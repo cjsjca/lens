@@ -12,7 +12,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python3 run.py init"
+args = "python status_server.py"
 
 [[workflows.workflow]]
 name = "Status Server"
