@@ -1,0 +1,130 @@
+**Title:** Scaffold a “Cage” Code-Runner with Guardrails (Room · Referee · Logbook · Workbench · Rulebook · Voice)
+
+**Intent (read carefully, then follow exactly):**  
+Create a **minimal but runnable** repository that demonstrates a code-runner operating *inside a cage*. The point is behavior, not features. Keep it **small, readable, and strict**. Everything below is a requirement.
+
+### What to build (conceptual pieces → files)
+
+1) **Room** (the safe place it runs)  
+   - Provide a simple launcher that runs entirely inside a project folder (acts as the “room”).  
+   - No network calls. No writes outside this folder.  
+   - Directory layout:
+     ```
+     cage/
+       run.py                 # CLI entrypoint
+       cagecore/
+         room.py             # paths, startup
+         referee.py          # rule checks
+         logbook.py          # append-only JSONL log
+         workbench.py        # controlled file IO under ./workspace
+         rulebook.py         # preferences + corrections (JSON)
+         voice.py            # “Maxim + Threadline” responses
+         planner.py          # makes a PLAN object (no editing)
+         executor.py         # applies diffs only
+         diffs.py            # make/apply unified diffs (tiny)
+         rehydrator.py       # loads past corrections + prefs
+         arc.py              # Adaptive Retrieval Controller (knob-minder; tiny heuristic)
+         tests.py            # smoke/guard checks
+       workspace/            # only writable area for content
+       artifacts/            # publish target (requires approval)
+       rulebook.json         # created on init if missing
+       trail.log             # append-only JSONL
+       README.md
+       LICENSE
+     ```
+
+2) **Referee** (the rule-keeper; enforce these):  
+   - **Plan-then-Act:** no edits unless a PLAN was recorded this run.  
+   - **Diff-only:** never write whole files; generate and apply a diff/patch.  
+   - **Append-only log:** `trail.log` is JSONL; only append; never edit/remove.  
+   - **Rehydrate-before-act:** read rulebook + relevant past corrections before planning/acting.  
+   - **Publish gate:** moving files from `workspace/` → `artifacts/` requires explicit approval.  
+   - **Violation message (exact text):**  
+     > `Not allowed. Diff-only and append-only per the rules.`
+
+3) **Logbook** (the append-only record):  
+   - JSON Lines; each entry gets a timestamp and a content hash.  
+   - Record at minimum: `plan`, `diff`, `apply_result`, `tests`, `publish`, and any `violation`.  
+   - Provide `cage run.py show-log` to tail the last N entries.
+
+4) **Workbench** (controlled file edits):  
+   - Only paths under `./workspace` are writable.  
+   - A helper that refuses any path traversal or outside writes; on refusal, trigger the violation message and log it.
+
+5) **Rulebook** (your directions + preferences):  
+   - `rulebook.json` with two keys:  
+     - `"preferences"` (e.g., `{ "tone": "brief" }`)  
+     - `"corrections"` (list of corrections with minimal fields: timestamp, “from”, “to”, optional note)  
+   - The runner must read this before planning.  
+   - Add a CLI to append a simple correction (e.g., `add-correction --from X --to Y`).
+
+6) **Voice** (how it speaks):  
+   - All user-facing output defaults to **Maxim** + **Threadline** (two short paragraphs).  
+   - Only show full PLAN, DIFF, or LOG when explicitly requested.
+
+7) **Planner & Executor** (the loop):  
+   - `plan` command creates a PLAN (no edits yet): title, target file path (under workspace), intended change (simple find/replace is enough for demo), and any notes.  
+   - `apply` command:  
+     - Referee checks: plan exists, path is inside workspace, rehydration done.  
+     - Produce a **unified diff** from “before” → “after”.  
+     - Append the diff to the log (no whole-file dumps).  
+     - Apply the diff.  
+     - Run `tests.py` (a tiny smoke check).  
+     - Log result.  
+     - On failure, revert using the saved patch and log the revert.  
+   - `publish` command: only moves selected files from `workspace/` to `artifacts/` if the latest tests passed and the user confirms.
+
+8) **ARC (Adaptive Retrieval Controller) — tiny heuristic only:**  
+   - For now, it just chooses how much recent context from `trail.log` to rehydrate based on task length: short tasks → last 5 entries; longer tasks → last 20. Keep it small and readable.
+
+9) **Tests/Guards:**  
+   - A minimal `tests.py` that can be run after `apply`: trivial lint or content sanity (e.g., verify the replacement actually occurred; file encodes as UTF-8; no TODO markers left).  
+   - If tests fail, auto-revert and log.
+
+### CLI commands (must exist)
+
+- `python run.py init`  
+  - Make `rulebook.json` if missing, create `workspace/sample.txt` with a greeting, touch `trail.log`.  
+  - Output: Maxim + Threadline confirming the room is ready.
+
+- `python run.py plan "Title" --file sample.txt --replace "Hello" --with "Hey"`  
+  - Record PLAN in `trail.log` (append).  
+  - Output: Maxim + Threadline summarizing intended change.
+
+- `python run.py show-plan`  
+  - Print the latest PLAN (JSON).
+
+- `python run.py apply`  
+  - Enforce Plan-then-Act, Diff-only, Rehydrate-before-act.  
+  - Log `diff`, `apply_result`, and `tests`.  
+  - On rule violation, print the exact violation message and exit non-zero.  
+  - Output: Maxim + Threadline (“Applied safely.” or reason).
+
+- `python run.py publish --file sample.txt`  
+  - If last tests passed, copy file to `artifacts/` and log a `publish` entry.  
+  - Output: Maxim + Threadline confirming publish (or refusal if tests not green).
+
+- `python run.py show-log`  
+  - Tail last 50 entries as JSONL pretty-printed.
+
+- `python run.py add-correction --from "Hello" --to "Hey" --note "Prefer casual tone"`  
+  - Append a correction to `rulebook.json`, then log an entry noting the update.
+
+### Acceptance criteria (treat as tests)
+1. Running `init` creates `workspace/sample.txt`, `rulebook.json`, and `trail.log`.  
+2. Running `plan` appends a `plan` entry to `trail.log`.  
+3. Running `apply` with a valid plan appends `diff`, `apply_result`, `tests` entries; the file changes via diff; the violation message never appears.  
+4. Running `apply` without a plan prints the **exact** violation message and logs a `violation` entry.  
+5. Attempts to write outside `workspace` print the **exact** violation message and log a `violation`.  
+6. `publish` refuses if tests haven’t passed; allows when they have, logs `publish`.  
+7. All user-facing messages are short **Maxim + Threadline** by default.  
+8. `show-log` shows append-only history; earlier entries remain unchanged.  
+9. `rehydrator` reads `rulebook.json` before `plan` and `apply`; if a correction matches the current task (e.g., same from→to), note “respected prior correction” in the log entry.
+
+### Style & scope
+- Keep files **small and readable**; favor clarity over cleverness.  
+- No external services; standard Python only.  
+- Comment at the top of each file which piece it represents (“Room/Referee/Logbook/Workbench/Rulebook/Voice”).  
+- Put a friendly **README.md** with the six pieces explained in plain language and the CLI examples above.
+
+**Deliverable:** a single, runnable repo that passes the acceptance criteria. Do not add extra features. If a requested action breaks a rule, print the exact violation message and log it.
