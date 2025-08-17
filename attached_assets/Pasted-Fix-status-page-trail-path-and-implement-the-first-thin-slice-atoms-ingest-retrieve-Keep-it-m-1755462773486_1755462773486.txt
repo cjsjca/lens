@@ -1,0 +1,83 @@
+Fix status page trail path and implement the first thin slice (atoms + ingest + retrieve). Keep it minimal.
+
+A) Status trail fix (diff-only):
+- In status_server.py, define:
+    import os, sys, time
+    ART1 = os.path.join("artifacts", "trail.log")
+    ART2 = "trail.log"
+    def trail_path():
+        return ART1 if os.path.exists(ART1) else ART2
+    def tail(path, n=20):
+        if not os.path.exists(path): return []
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            return [ln.rstrip("\n") for ln in f.readlines()[-n:]]
+- Use tail(trail_path(), 20) wherever the page shows “Trail Log”.
+- Include "trail_file": trail_path() in /status.json.
+
+B) Add minimal embedding and storage (new small module + run.py commands):
+- Create cagecore/embedder.py with a deterministic placeholder embedding:
+    # text -> 8 floats in [-1,1] via stable hashing
+    import hashlib
+    def vector(text:str):
+        h = hashlib.sha256(text.encode("utf-8")).digest()
+        vals = []
+        for i in range(8):
+            # two bytes -> int -> map to [-1,1]
+            n = int.from_bytes(h[2*i:2*i+2], "big")
+            vals.append((n % 2001)/1000.0 - 1.0)
+        return vals
+
+- Append-only files (create on first use, root of repo):
+    atoms_path = "atoms.jsonl"
+    links_path = "links.jsonl"
+    trail_path_root = "trail.log"
+
+- In run.py add two subcommands:
+
+  1) ingest:
+     usage: python run.py ingest --author "<name>" --role "<student|teacher|teacher_note|system>" --text "<freeform>" [--topic "<optional>"]
+     behavior:
+       * make an atom: {id, ts (UTC ISO), author, role, topic?, text, embedding, meta?}
+       * id: uuid4 hex
+       * embedding: embedder.vector(text)
+       * append JSON line to atoms.jsonl
+       * append a human-readable "ingest <id> <topic?> <first 60 chars>" line to trail.log
+       * print the new id
+
+  2) retrieve:
+     usage: python run.py retrieve --query "<text>" --k 5
+     behavior:
+       * compute query embedding
+       * load atoms.jsonl (if empty, print message and exit 0)
+       * cosine similarity over the 8-dim vectors
+       * print top-k: "<id> | <score:0.000> | <ts> | <first 60 chars>"
+
+- Guardrails:
+    * All writes are append-only (open with 'a'); never rewrite files.
+    * Only write to the three root files above (no path juggling).
+    * No external packages.
+
+C) Status counters:
+- In status_server.py /status.json, compute:
+    "atoms_count": number of lines in atoms.jsonl (0 if missing),
+    "links_count": number of lines in links.jsonl (0 if missing),
+    "atoms_last5": list of last up to 5 atoms as {id, ts, text60}
+- Add these to the HTML.
+
+D) Restart & demo (commands):
+- pkill -f status_server.py || true
+- nohup python status_server.py >/dev/null 2>&1 &
+- python run.py ingest --author "Teacher J" --role "teacher_note" --text "Student confuses area and perimeter; using square tiles helped." --topic "geometry"
+- python run.py ingest --author "Student A" --role "student" --text "I thought area was the border; the tile example helped." --topic "geometry"
+- python run.py retrieve --query "perimeter vs area" --k 3
+- echo "[marker] thin-slice done $(date -u +'%FT%TZ')" >> artifacts/last_outputs.txt || true
+
+E) Reply EXACTLY:
+BEGIN-RESULT
+<either OK or FAIL + one-line reason>
+BEGIN-COUNTS
+atoms=<n> links=<m> trail_file=<path>
+BEGIN-RETRIEVE
+<idA> | <scoreA> | <tsA> | <text60...>
+<idB> | <scoreB> | <tsB> | <text60...>
+<idC> | <scoreC> | <tsC> | <text60...>
