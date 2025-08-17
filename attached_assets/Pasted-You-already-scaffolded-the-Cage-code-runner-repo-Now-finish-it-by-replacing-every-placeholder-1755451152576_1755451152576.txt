@@ -1,0 +1,66 @@
+You already scaffolded the “Cage” code-runner repo. Now **finish it** by replacing every placeholder (`...`) with working code and wiring all commands end-to-end. Do not change filenames or project layout. Keep everything small and readable, no new dependencies.
+
+**Non-negotiables to implement now:**
+1) Referee (`cagecore/referee.py`)
+   - Implement: enforce_plan_then_act, enforce_rehydrate_before_act, enforce_workspace_only (reject path escapes), enforce_diff_only (executor must only write via patch), enforce_append_only_log (logbook API must not expose non-append entry points).
+   - On violation: raise RuleViolationError and log a `violation` entry with the exact message: `Not allowed. Diff-only and append-only per the rules.`
+
+2) Logbook (`cagecore/logbook.py`)
+   - `ensure_exists()` creates `trail.log` if missing.
+   - `append(entry_type, data)` appends one JSON line with: ts (UTC ISO), type, data, hash (sha256 of the serialized payload).
+   - `tail(count)` returns the last N entries.
+   - No read-modify-write; only append. No overwrite.
+
+3) Workbench (`cagecore/workbench.py`)
+   - Implement a strict inside-workspace check (resolve paths; deny traversal).
+   - Read/write helpers must call referee.enforce_workspace_only before touching the filesystem.
+
+4) Rulebook (`cagecore/rulebook.py`)
+   - Implement `load()`, `save()`, `init_if_missing()` with structure:
+     { "preferences": {"tone": "brief"}, "corrections": [] }
+   - `add_correction(from_text, to_text, note)` appends with timestamp.
+
+5) Diffs & Executor (`cagecore/diffs.py`, `cagecore/executor.py`)
+   - `create_diff(original, new, filename)` returns a valid unified diff.
+   - `apply_patch(original, diff)` returns the patched text or raises on failure (you can use python stdlib diff/patch logic or minimal parser; small is fine).
+   - Executor flow in `apply_latest_plan()`:
+     * Load latest PLAN.
+     * Read current file content from workspace.
+     * Build unified diff; log a `diff` entry (store the diff string).
+     * Apply patch to produce new content in memory; write result to workspace ONLY via this patch.
+     * Run `tests.run_smoke(plan)`. If fail: revert by writing original content from memory; log `apply_result` with success=false and reason.
+     * If pass: clear PLAN; log `apply_result` success=true.
+
+6) Rehydration & ARC (`cagecore/rehydrator.py`, `cagecore/arc.py`)
+   - `rehydrator.rehydrate()` reads `rulebook.json` and recent `trail.log` entries. Set a module-level `_rehydrated=True`. Provide `is_rehydrated()`.
+   - `arc.choose_context_depth(task_hint:str) -> int` tiny heuristic: short titles → 5, else → 20.
+
+7) Tests (`cagecore/tests.py`)
+   - `run_smoke(plan)` must:
+     * Confirm target file exists and contains the replacement string.
+     * Confirm file is non-empty and UTF-8 encodable.
+     * Set a module-level `_last_test_result` and return it.
+   - `last_tests_passed()` returns True/False based on `_last_test_result`.
+
+8) CLI (`run.py`)
+   - Ensure the following commands work end-to-end:
+     * `init` → create `workspace/sample.txt`, `rulebook.json`, touch `trail.log`, log a `room_ready`.
+     * `plan "Title" --file sample.txt --replace "Hello" --with "Hey"` → record PLAN (log `plan`).
+     * `show-plan` → print latest PLAN JSON to stdout.
+     * `apply` → enforce rules, log `diff`, `apply_result`, and `tests`. On any rule break print exact violation message and exit non-zero.
+     * `publish --file sample.txt` → only if `tests.last_tests_passed()`; copy to `artifacts/` and log `publish`; else refuse with a short message.
+     * `show-log` → pretty-print last 50 JSONL entries.
+     * `add-correction --from X --to Y --note Z` → update rulebook and log `correction_added`.
+
+**Acceptance checks (must pass now):**
+1. `python run.py init` creates `workspace/sample.txt`, `rulebook.json`, `trail.log`.  
+2. `python run.py plan "Fix greeting" --file sample.txt --replace "Hello" --with "Hi"` appends a `plan`.  
+3. `python run.py apply` appends `diff`, `apply_result`, `tests`; modifies file via diff; no violation.  
+4. `python run.py apply` again (without a fresh plan) prints the exact violation string and logs a `violation`.  
+5. Attempt to write outside `workspace` triggers the violation and logs it.  
+6. `python run.py publish --file sample.txt` refuses if last tests didn’t pass; succeeds after a passing apply and logs `publish`.  
+7. All user-facing messages are “Maxim + Threadline” by default.  
+8. `python run.py show-log` shows an append-only history; earlier entries are unchanged.  
+9. `rehydrator` is invoked before plan/apply; if a correction matches, log “respected prior correction”.
+
+Do not add any new libraries. Keep functions short and clear. Replace every `...` with working code.
