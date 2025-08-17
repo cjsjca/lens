@@ -1,0 +1,116 @@
+Tighten two things so `apply` succeeds and logs remain append-only. OUTPUT DIFFS ONLY. Do not add files or deps.
+
+GOAL
+- Make executor writes happen ONLY under diff-mode.
+- Make append-only guard accept size_after >= size_before (not strictly >).
+
+PATCHES
+
+A) cagecore/diffs.py — ensure diff-mode wraps the single write call
+--- a/cagecore/diffs.py
++++ b/cagecore/diffs.py
+@@
+-from . import workbench
++from . import workbench, executor
+@@
+-def apply_diff(filename: str, original: str, new: str) -> None:
+-    # currently may write raw. Must toggle diff-mode around the write.
+-    workbench.write_file_guarded(filename, new)
++def apply_diff(filename: str, original: str, new: str) -> None:
++    # Toggle DIFF_MODE_ACTIVE only for the duration of the guarded write
++    executor.DIFF_MODE_ACTIVE = True
++    try:
++        workbench.write_file_guarded(filename, new)
++    finally:
++        executor.DIFF_MODE_ACTIVE = False
+
+B) cagecore/executor.py — never write outside diffs.apply_diff; route revert through diff gate too
+--- a/cagecore/executor.py
++++ b/cagecore/executor.py
+@@
+-from . import diffs, workbench, tests, logbook, referee
++from . import diffs, workbench, tests, logbook, referee
+@@
+-# Ensure this exists at module level:
+-# DIFF_MODE_ACTIVE = False
++DIFF_MODE_ACTIVE = False
+@@
+-    # After building new_text, write it:
+-    workbench.write_file_guarded(plan["target_file"], new_text)
++    # After building new_text, write via diffs gate ONLY:
++    diffs.apply_diff(plan["target_file"], original_text, new_text)
+@@
+-    # On test failure, revert by writing back original directly:
+-    workbench.write_file_guarded(plan["target_file"], original_text)
++    # On test failure, revert through the SAME diff gate:
++    diffs.apply_diff(plan["target_file"], new_text, original_text)
+
+C) cagecore/workbench.py — ensure writes go through referee checks; pass Path to referee
+--- a/cagecore/workbench.py
++++ b/cagecore/workbench.py
+@@
+ from pathlib import Path
+-from . import referee, room
++from . import referee, room
+@@
+ def write_file_guarded(rel_path: str, content: str) -> None:
+-    file_path = room.workspace_path() / rel_path
+-    referee.enforce_workspace_only(file_path)
+-    referee.enforce_diff_only(path=file_path)
++    file_path: Path = room.workspace_path() / rel_path
++    referee.enforce_workspace_only(file_path)
++    referee.enforce_diff_only(path=file_path)  # blocks unless in diff-mode (or bootstrap)
+     with open(file_path, "w", encoding="utf-8") as f:
+         f.write(content)
+
+D) cagecore/logbook.py — accept size_after >= size_before and fsync; return True/False sanely
+--- a/cagecore/logbook.py
++++ b/cagecore/logbook.py
+@@
+-import os, json, time, hashlib
++import os, json, time, hashlib
+@@
+ def append(entry_type: str, data: dict) -> None:
+     ensure_exists()
+-    size_before = os.path.getsize(_LOG_PATH)
+-    line = json.dumps({...}, ensure_ascii=False) + "\n"
+-    with open(_LOG_PATH, "a", encoding="utf-8") as f:
+-        f.write(line)
+-    size_after = os.path.getsize(_LOG_PATH)
+-    _last_append_ok = size_after > size_before
++    size_before = os.path.getsize(_LOG_PATH)
++    line = json.dumps({...}, ensure_ascii=False) + "\n"
++    with open(_LOG_PATH, "a", encoding="utf-8") as f:
++        f.write(line)
++        f.flush()
++        os.fsync(f.fileno())
++    size_after = os.path.getsize(_LOG_PATH)
++    _last_append_ok = (size_after >= size_before)
+@@
+ def guard_append_only() -> bool:
+-    return bool(_last_append_ok)
++    # True if last append did not shrink/overwrite the file
++    return bool(_last_append_ok)
+
+E) run.py — ensure rehydrate once and then proceed
+--- a/run.py
++++ b/run.py
+@@
+ def main():
+-    # existing arg parsing...
++    # existing arg parsing...
++    # Ensure we rehydrate once per process before plan/apply/publish
++    if args.command in {"plan","apply","publish"}:
++        from cagecore import rehydrator
++        rehydrator.rehydrate()
+
+ACCEPTANCE (run in shell):
+1) python run.py init
+2) python run.py plan "Fix greeting" --file sample.txt --replace "Hello" --with "Hi"
+3) python run.py apply
+4) python run.py show-log
+5) python run.py apply                         # expect exact violation
+6) python run.py plan "Escape" --file ../x --replace x --with y
+   python run.py apply                         # expect exact violation
+
+Keep all messages short (Maxim + Threadline) except the exact violation line.
