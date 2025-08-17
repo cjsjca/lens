@@ -1,8 +1,11 @@
 
 import os, io, time, sys, json
 from flask import Flask, jsonify, Response
+from datetime import datetime
 
 APP = Flask(__name__)
+SERVER_START_TIME = datetime.utcnow().isoformat() + "Z"
+LAST_RETRIEVE_RESULT = None
 
 ART_DIR = "artifacts"
 ART1 = os.path.join("artifacts", "trail.log")
@@ -55,6 +58,18 @@ def get_last_atoms(n=5):
         return atoms[-n:] if atoms else []
     except FileNotFoundError:
         return []
+
+def get_last_retrieve_result():
+    """Get the last retrieve result from trail log"""
+    try:
+        trail_lines = tail(trail_path(), 50)
+        for line in reversed(trail_lines):
+            if " | " in line and "retrieve" not in line:
+                # This looks like a retrieve result line
+                return line
+        return "none yet"
+    except Exception:
+        return "none yet"
 
 
 def get_cage_state():
@@ -109,14 +124,19 @@ def status_json():
         "strict_mode": get_strict_mode(),
         "cage_state": get_cage_state(),
         "trail_file": trail_path(),
-        "trail_tail": tail(trail_path(), 20),
+        "trail_tail": tail(trail_path(), 10),
         "trail_mtime": mtime(trail_path()),
         "last_outputs_tail": tail(LAST, 50),
         "last_outputs_mtime": mtime(LAST),
         "atoms_count": count_lines("atoms.jsonl"),
+        "atoms_exists": os.path.exists("atoms.jsonl"),
         "links_count": count_lines("links.jsonl"),
+        "links_exists": os.path.exists("links.jsonl"),
         "atoms_last5": get_last_atoms(5),
+        "last_retrieve": get_last_retrieve_result(),
         "server_time": time.time(),
+        "server_start_time": SERVER_START_TIME,
+        "current_working_directory": os.getcwd(),
     }
     return jsonify(data)
 
@@ -159,12 +179,23 @@ HTML = """<!doctype html>
 </div>
 
 <div class="section">
-<h3>Atoms & Links</h3>
-<p>Atoms: {ATOMS_COUNT} | Links: {LINKS_COUNT}</p>
+<h3>Files & Storage</h3>
+<p>Trail file: {TRAIL_FILE}</p>
+<p>Atoms: {ATOMS_EXISTS} ({ATOMS_COUNT} lines) | Links: {LINKS_EXISTS} ({LINKS_COUNT} lines)</p>
+<h4>Last 5 Atoms</h4>
 <pre>{ATOMS_LAST5}</pre>
+<h4>Last Retrieve Result</h4>
+<pre>{LAST_RETRIEVE}</pre>
 </div>
 
-<h2>Trail Log (last 20 lines)</h2>
+<div class="section">
+<h3>Server Environment</h3>
+<p>CWD: {CWD}</p>
+<p>Restarted: {RESTART_TIME}</p>
+<p>Mode: {MODE_PILL}</p>
+</div>
+
+<h2>Trail Log (last 10 lines from {TRAIL_FILE})</h2>
 <pre>{TRAIL}</pre>
 
 <h2>Command Outputs</h2>
@@ -198,6 +229,12 @@ def format_plan(plan):
         return "No plan set"
     return f"'{plan.get('title', 'Untitled')}' - {plan.get('filename', '?')} ({plan.get('find_text', '?')[:30]}...)"
 
+def mode_pill():
+    strict = get_strict_mode()
+    if strict is True:  return '<span class="pill ok">Strict</span>'
+    if strict is False: return '<span class="pill warn">Relaxed</span>'
+    return '<span class="pill warn">Unknown</span>'
+
 @APP.route("/")
 def index():
     cage_state = get_cage_state()
@@ -217,10 +254,17 @@ def index():
         CURRENT_PLAN=format_plan(latest_plan),
         WORKSPACE_FILES="<br>".join(workspace_files) or "(no files)",
         RECENT_OPS="\n".join([format_operation(op) for op in recent_ops[-5:]]) or "(no recent operations)",
+        TRAIL_FILE=trail_path(),
+        ATOMS_EXISTS="exists" if os.path.exists("atoms.jsonl") else "missing",
         ATOMS_COUNT=count_lines("atoms.jsonl"),
+        LINKS_EXISTS="exists" if os.path.exists("links.jsonl") else "missing",
         LINKS_COUNT=count_lines("links.jsonl"),
         ATOMS_LAST5=atoms_display,
-        TRAIL="\n".join(tail(trail_path(), 20)) or "(no trail yet)",
+        LAST_RETRIEVE=get_last_retrieve_result(),
+        CWD=os.getcwd(),
+        RESTART_TIME=SERVER_START_TIME,
+        MODE_PILL=mode_pill(),
+        TRAIL="\n".join(tail(trail_path(), 10)) or "(no trail yet)",
         LAST="\n".join(tail(LAST, 50)) or "(no last outputs yet)",
         NOW=time.strftime("%Y-%m-%d %H:%M:%S"),
     )
