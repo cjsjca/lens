@@ -6,12 +6,16 @@ Main launcher that coordinates all cage components.
 
 import sys
 import argparse
+import json
+import uuid
+import math
+from datetime import datetime
 from pathlib import Path
 
 # Add the current directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator, planner, executor, tests
+from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator, planner, executor, tests, embedder
 
 
 def main():
@@ -41,11 +45,23 @@ def main():
     # show-log command
     subparsers.add_parser('show-log', help='Show recent log entries')
 
-    # add-correction command
-    correction_parser = subparsers.add_parser('add-correction', help='Add a correction rule')
-    correction_parser.add_argument('--from', dest='from_text', required=True, help='Text to correct from')
-    correction_parser.add_argument('--to', required=True, help='Text to correct to')
-    correction_parser.add_argument('--note', help='Optional note about the correction')
+    # Add-correction subcommand
+    add_correction_parser = subparsers.add_parser("add-correction", help="Add a correction rule")
+    add_correction_parser.add_argument("--from", dest="from_text", required=True, help="Text to replace")
+    add_correction_parser.add_argument("--to", dest="to_text", required=True, help="Replacement text")
+    add_correction_parser.add_argument("--note", help="Optional note about the correction")
+
+    # Ingest subcommand
+    ingest_parser = subparsers.add_parser("ingest", help="Ingest a new atom")
+    ingest_parser.add_argument("--author", required=True, help="Author name")
+    ingest_parser.add_argument("--role", required=True, choices=["student", "teacher", "teacher_note", "system"], help="Role")
+    ingest_parser.add_argument("--text", required=True, help="Text content")
+    ingest_parser.add_argument("--topic", help="Optional topic")
+
+    # Retrieve subcommand
+    retrieve_parser = subparsers.add_parser("retrieve", help="Retrieve atoms by similarity")
+    retrieve_parser.add_argument("--query", required=True, help="Query text")
+    retrieve_parser.add_argument("--k", type=int, default=5, help="Number of results")
 
     args = parser.parse_args()
 
@@ -69,7 +85,11 @@ def main():
         elif args.command == 'show-log':
             cmd_show_log()
         elif args.command == 'add-correction':
-            cmd_add_correction(args.from_text, args.to, args.note)
+            cmd_add_correction(args.from_text, args.to_text, args.note)
+        elif args.command == "ingest":
+            cmd_ingest(args.author, args.role, args.text, args.topic)
+        elif args.command == "retrieve":
+            cmd_retrieve(args.query, args.k)
         else:
             parser.print_help()
     except referee.RuleViolationError:
@@ -161,6 +181,78 @@ def cmd_add_correction(from_text, to_text, note=None):
     logbook.append("correction_added", correction)
 
     print(voice.maxim_threadline("Correction added.", f"'{from_text}' → '{to_text}' recorded in rulebook."))
+
+
+def cmd_ingest(author, role, text, topic=None):
+    """Ingest a new atom"""
+    atom_id = uuid.uuid4().hex
+    ts = datetime.utcnow().isoformat() + "Z"
+    embedding = embedder.vector(text)
+
+    atom = {
+        "id": atom_id,
+        "ts": ts,
+        "author": author,
+        "role": role,
+        "text": text,
+        "embedding": embedding
+    }
+
+    if topic:
+        atom["topic"] = topic
+
+    # Append to atoms.jsonl
+    with open("atoms.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps(atom) + "\n")
+
+    # Append to trail.log
+    text_preview = text[:60] + "..." if len(text) > 60 else text
+    topic_str = f" {topic}" if topic else ""
+    trail_entry = f"ingest {atom_id}{topic_str} {text_preview}"
+    with open("trail.log", "a", encoding="utf-8") as f:
+        f.write(trail_entry + "\n")
+
+    print(atom_id)
+
+
+def cosine_similarity(a, b):
+    """Calculate cosine similarity between two vectors"""
+    dot_product = sum(x * y for x, y in zip(a, b))
+    norm_a = math.sqrt(sum(x * x for x in a))
+    norm_b = math.sqrt(sum(x * x for x in b))
+    if norm_a == 0 or norm_b == 0:
+        return 0
+    return dot_product / (norm_a * norm_b)
+
+
+def cmd_retrieve(query, k=5):
+    """Retrieve atoms by similarity to query"""
+    try:
+        with open("atoms.jsonl", "r", encoding="utf-8") as f:
+            atoms = [json.loads(line.strip()) for line in f if line.strip()]
+    except FileNotFoundError:
+        print("No atoms found. Run 'ingest' first.")
+        return
+
+    if not atoms:
+        print("No atoms found. Run 'ingest' first.")
+        return
+
+    query_embedding = embedder.vector(query)
+
+    # Calculate similarities
+    results = []
+    for atom in atoms:
+        similarity = cosine_similarity(query_embedding, atom["embedding"])
+        results.append((atom, similarity))
+
+    # Sort by similarity (descending)
+    results.sort(key=lambda x: x[1], reverse=True)
+
+    # Print top-k
+    for atom, score in results[:k]:
+        text_preview = atom["text"][:60] + "..." if len(atom["text"]) > 60 else atom["text"]
+        print(f"{atom['id']} | {score:.3f} | {atom['ts']} | {text_preview}")
 
 
 if __name__ == "__main__":

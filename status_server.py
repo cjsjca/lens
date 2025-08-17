@@ -1,5 +1,5 @@
 
-import os, io, time, sys
+import os, io, time, sys, json
 from flask import Flask, jsonify, Response
 
 APP = Flask(__name__)
@@ -28,6 +28,34 @@ def get_strict_mode():
         return getattr(referee, "STRICT_MODE", True)
     except Exception:
         return None  # unknown
+
+def count_lines(filename):
+    """Count lines in a file, return 0 if missing"""
+    try:
+        with open(filename, "r", encoding="utf-8") as f:
+            return sum(1 for _ in f)
+    except FileNotFoundError:
+        return 0
+
+
+def get_last_atoms(n=5):
+    """Get last n atoms with id, ts, text60"""
+    try:
+        atoms = []
+        with open("atoms.jsonl", "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    atom = json.loads(line.strip())
+                    text60 = atom["text"][:60] + "..." if len(atom["text"]) > 60 else atom["text"]
+                    atoms.append({
+                        "id": atom["id"],
+                        "ts": atom["ts"],
+                        "text60": text60
+                    })
+        return atoms[-n:] if atoms else []
+    except FileNotFoundError:
+        return []
+
 
 def get_cage_state():
     """Get comprehensive cage application state"""
@@ -85,6 +113,9 @@ def status_json():
         "trail_mtime": mtime(trail_path()),
         "last_outputs_tail": tail(LAST, 50),
         "last_outputs_mtime": mtime(LAST),
+        "atoms_count": count_lines("atoms.jsonl"),
+        "links_count": count_lines("links.jsonl"),
+        "atoms_last5": get_last_atoms(5),
         "server_time": time.time(),
     }
     return jsonify(data)
@@ -125,6 +156,12 @@ HTML = """<!doctype html>
 <div class="section">
 <h3>Recent Operations (last 5)</h3>
 <pre>{RECENT_OPS}</pre>
+</div>
+
+<div class="section">
+<h3>Atoms & Links</h3>
+<p>Atoms: {ATOMS_COUNT} | Links: {LINKS_COUNT}</p>
+<pre>{ATOMS_LAST5}</pre>
 </div>
 
 <h2>Trail Log (last 20 lines)</h2>
@@ -169,6 +206,9 @@ def index():
     last_op = cage_state.get('last_operation')
     latest_plan = cage_state.get('latest_plan')
     workspace_files = cage_state.get('workspace_files', [])
+    atoms_last5 = get_last_atoms(5)
+    
+    atoms_display = "\n".join([f"{a['id'][:8]} | {a['ts']} | {a['text60']}" for a in atoms_last5]) or "(no atoms yet)"
     
     html = HTML.format(
         STRICT_PILL=strict_pill(),
@@ -177,6 +217,9 @@ def index():
         CURRENT_PLAN=format_plan(latest_plan),
         WORKSPACE_FILES="<br>".join(workspace_files) or "(no files)",
         RECENT_OPS="\n".join([format_operation(op) for op in recent_ops[-5:]]) or "(no recent operations)",
+        ATOMS_COUNT=count_lines("atoms.jsonl"),
+        LINKS_COUNT=count_lines("links.jsonl"),
+        ATOMS_LAST5=atoms_display,
         TRAIL="\n".join(tail(trail_path(), 20)) or "(no trail yet)",
         LAST="\n".join(tail(LAST, 50)) or "(no last outputs yet)",
         NOW=time.strftime("%Y-%m-%d %H:%M:%S"),
