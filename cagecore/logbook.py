@@ -1,7 +1,7 @@
 
 """
 Logbook (append-only JSONL log)
-Maintains an immutable record of all cage operations.
+Records all cage operations in an immutable trail.
 """
 
 import json
@@ -11,47 +11,49 @@ from . import room
 
 
 def ensure_exists():
-    """Ensure the log file exists"""
-    log_path = room.get_trail_log_path()
-    if not log_path.exists():
-        log_path.touch()
+    """Create the trail log if it doesn't exist"""
+    trail_path = room.get_trail_log_path()
+    if not trail_path.exists():
+        trail_path.touch()
 
 
 def append(entry_type, data):
-    """Append an entry to the log"""
+    """Append a new entry to the trail log"""
     timestamp = datetime.utcnow().isoformat() + "Z"
+    
     entry = {
-        "timestamp": timestamp,
+        "ts": timestamp,
         "type": entry_type,
-        "data": data,
-        "hash": _compute_hash(entry_type, data, timestamp)
+        "data": data
     }
     
-    log_path = room.get_trail_log_path()
-    with open(log_path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, separators=(',', ':')) + "\n")
+    # Create hash of the serialized payload
+    payload = json.dumps(entry, sort_keys=True)
+    entry["hash"] = hashlib.sha256(payload.encode()).hexdigest()
+    
+    # Append to log file
+    trail_path = room.get_trail_log_path()
+    with open(trail_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
 
 
-def get_recent_entries(count=50):
-    """Get the most recent entries from the log"""
-    log_path = room.get_trail_log_path()
-    if not log_path.exists():
+def get_recent_entries(count):
+    """Get the last N entries from the trail log"""
+    trail_path = room.get_trail_log_path()
+    if not trail_path.exists():
         return []
     
     entries = []
-    with open(log_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                try:
-                    entries.append(json.loads(line))
-                except json.JSONDecodeError:
-                    continue
+    with open(trail_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
     
-    return entries[-count:] if count > 0 else entries
-
-
-def _compute_hash(entry_type, data, timestamp):
-    """Compute a hash for the entry"""
-    content = f"{timestamp}:{entry_type}:{json.dumps(data, sort_keys=True)}"
-    return hashlib.sha256(content.encode()).hexdigest()[:16]
+    # Take last N lines
+    for line in lines[-count:]:
+        line = line.strip()
+        if line:
+            try:
+                entries.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    
+    return entries

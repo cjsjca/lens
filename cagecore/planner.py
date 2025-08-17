@@ -1,46 +1,43 @@
 
 """
 Planner (makes a PLAN object, no editing)
-Creates execution plans without performing any modifications.
+Creates and manages execution plans.
 """
 
+import json
 from datetime import datetime
-from . import logbook
 
-
+# Module-level storage for current plan
 _current_plan = None
 
 
-def create_plan(title, target_file, find_text, replace_text):
+def create_plan(title, filename, find_text, replace_text):
     """Create a new plan"""
     global _current_plan
     
-    plan_data = {
+    plan = {
         "title": title,
-        "target_file": target_file,
+        "target_file": filename,
         "find_text": find_text,
         "replace_text": replace_text,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "notes": f"Replace '{find_text}' with '{replace_text}' in {target_file}"
+        "timestamp": datetime.utcnow().isoformat() + "Z"
     }
     
-    _current_plan = plan_data
-    return plan_data
+    _current_plan = plan
+    return plan
 
 
 def get_latest_plan():
-    """Get the most recent plan"""
-    global _current_plan
+    """Get the current plan"""
     return _current_plan
 
 
 def has_current_plan():
     """Check if there's a current plan"""
-    global _current_plan
     return _current_plan is not None
 
 
 def clear_current_plan():
-    """Clear the current plan after execution"""
+    """Clear the current plan after successful execution"""
     global _current_plan
     _current_plan = None

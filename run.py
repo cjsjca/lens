@@ -82,6 +82,9 @@ def cmd_init():
     # Create directories
     room.ensure_directories()
     
+    # Touch log file first
+    logbook.ensure_exists()
+    
     # Create rulebook if missing
     if not rulebook.exists():
         rulebook.create_default()
@@ -91,11 +94,8 @@ def cmd_init():
     if not sample_path.exists():
         workbench.write_file("sample.txt", "Hello, welcome to the cage!")
     
-    # Touch log file
-    logbook.ensure_exists()
-    
     # Log the initialization
-    logbook.append("init", {"action": "initialized", "files_created": ["workspace/sample.txt", "rulebook.json", "trail.log"]})
+    logbook.append("room_ready", {"action": "initialized", "files_created": ["workspace/sample.txt", "rulebook.json", "trail.log"]})
     
     print(voice.maxim_threadline("Cage initialized successfully.", 
                                 "The room is ready with workspace, rulebook, and logging in place."))

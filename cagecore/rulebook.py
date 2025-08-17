@@ -45,6 +45,12 @@ def save(rulebook_data):
         json.dump(rulebook_data, f, indent=2)
 
 
+def init_if_missing():
+    """Initialize rulebook if it doesn't exist"""
+    if not exists():
+        create_default()
+
+
 def add_correction(from_text, to_text, note=None):
     """Add a correction to the rulebook"""
     rulebook_data = load()

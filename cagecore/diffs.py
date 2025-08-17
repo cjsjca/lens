@@ -46,3 +46,28 @@ def apply_diff(filename, original_content, new_content):
             "success": False,
             "error": str(e)
         }
+
+
+def apply_patch(original_content, diff_text):
+    """Apply a unified diff patch to original content"""
+    # Simple implementation: for this demo, we'll just return the patched result
+    # In a real system, you'd parse the diff and apply it line by line
+    try:
+        # This is a simplified implementation
+        # In practice, you'd parse the unified diff format properly
+        lines = diff_text.split('\n')
+        
+        # Find the replacement in the diff
+        add_lines = []
+        for line in lines:
+            if line.startswith('+') and not line.startswith('+++'):
+                add_lines.append(line[1:])
+        
+        # For this simple case, assume it's a straight replacement
+        if add_lines:
+            return '\n'.join(add_lines)
+        
+        return original_content
+        
+    except Exception as e:
+        raise ValueError(f"Failed to apply patch: {e}")
