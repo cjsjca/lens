@@ -1,11 +1,15 @@
 
-import os, io, time
+import os, io, time, sys
 from flask import Flask, jsonify, Response
 
 APP = Flask(__name__)
 
 ART_DIR = "artifacts"
-TRAIL = os.path.join(ART_DIR, "trail.log")
+ART1 = os.path.join("artifacts", "trail.log")
+ART2 = "trail.log"
+def trail_path():
+    return ART1 if os.path.exists(ART1) else ART2
+
 LAST = os.path.join(ART_DIR, "last_outputs.txt")
 
 def tail(path, n=20):
@@ -76,8 +80,9 @@ def status_json():
     data = {
         "strict_mode": get_strict_mode(),
         "cage_state": get_cage_state(),
-        "trail_tail": tail(TRAIL, 20),
-        "trail_mtime": mtime(TRAIL),
+        "trail_file": trail_path(),
+        "trail_tail": tail(trail_path(), 20),
+        "trail_mtime": mtime(trail_path()),
         "last_outputs_tail": tail(LAST, 50),
         "last_outputs_mtime": mtime(LAST),
         "server_time": time.time(),
@@ -172,7 +177,7 @@ def index():
         CURRENT_PLAN=format_plan(latest_plan),
         WORKSPACE_FILES="<br>".join(workspace_files) or "(no files)",
         RECENT_OPS="\n".join([format_operation(op) for op in recent_ops[-5:]]) or "(no recent operations)",
-        TRAIL="\n".join(tail(TRAIL, 20)) or "(no trail yet)",
+        TRAIL="\n".join(tail(trail_path(), 20)) or "(no trail yet)",
         LAST="\n".join(tail(LAST, 50)) or "(no last outputs yet)",
         NOW=time.strftime("%Y-%m-%d %H:%M:%S"),
     )
