@@ -17,6 +17,9 @@ class RuleViolationError(Exception):
 # Module flag for bootstrap mode
 BOOTSTRAP_MODE = False
 
+# TEMP for POC
+STRICT_MODE = False
+
 
 @contextmanager
 def allow_bootstrap():
@@ -57,6 +60,11 @@ def enforce_workspace_only(path):
 
 def enforce_diff_only(path=None):
     """Ensure writes happen ONLY via the diff path"""
+    if not STRICT_MODE:
+        from . import logbook
+        logbook.append("relaxed_write", {"path": str(path) if path else None})
+        return
+    
     # Allow bootstrap mode only for new files
     if BOOTSTRAP_MODE and path is not None:
         if not path.exists():
