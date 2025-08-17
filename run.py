@@ -11,7 +11,7 @@ from pathlib import Path
 # Add the current directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator, planner
+from cagecore import room, referee, workbench, rulebook, logbook, voice, rehydrator, planner, executor, tests
 
 
 def main():
@@ -53,12 +53,18 @@ def main():
         if args.command == 'init':
             cmd_init()
         elif args.command == 'plan':
+            # Rehydrate before planning
+            rehydrator.rehydrate()
             cmd_plan(args.title, args.file, args.replace, args.replacement)
         elif args.command == 'show-plan':
             cmd_show_plan()
         elif args.command == 'apply':
+            # Rehydrate before applying
+            rehydrator.rehydrate()
             cmd_apply()
         elif args.command == 'publish':
+            # Rehydrate before publishing
+            rehydrator.rehydrate()
             cmd_publish(args.file)
         elif args.command == 'show-log':
             cmd_show_log()
@@ -85,9 +91,6 @@ def cmd_init():
 
 def cmd_plan(title, filename, find_text, replace_text):
     """Create a plan"""
-    # Rehydrate before planning
-    rehydrator.rehydrate()
-
     plan_data = planner.create_plan(title, filename, find_text, replace_text)
     logbook.append("plan", plan_data)
 

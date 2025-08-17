@@ -30,7 +30,7 @@ def create_default():
 def init_if_missing():
     """Initialize rulebook if it doesn't exist using bootstrap write"""
     from . import workbench
-    rulebook_path = get_rulebook_path()
+    rulebook_path = room.get_rulebook_path()
 
     if not rulebook_path.exists():
         default_rules = {

@@ -28,30 +28,14 @@ def create_diff(original_content, new_content, filename):
     }
 
 
-def apply_diff(filename, original_content, new_content):
-    """Apply changes to a file through workbench with diff-only enforcement"""
-    from . import executor
-
+def apply_diff(filename: str, original: str, new: str) -> None:
+    """Apply a diff by writing the new content to the file"""
+    # Toggle DIFF_MODE_ACTIVE only for the duration of the guarded write
+    executor.DIFF_MODE_ACTIVE = True
     try:
-        # Set diff mode active before any writes
-        executor.DIFF_MODE_ACTIVE = True
-        try:
-            # Write through the guarded gate
-            workbench.write_file_guarded(filename, new_content)
-
-            return {
-                "success": True,
-                "message": f"Successfully applied changes to {filename}"
-            }
-        finally:
-            # Always reset diff mode
-            executor.DIFF_MODE_ACTIVE = False
-
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Failed to apply changes: {str(e)}"
-        }
+        workbench.write_file_guarded(filename, new)
+    finally:
+        executor.DIFF_MODE_ACTIVE = False
 
 
 def apply_patch(original_content, diff_text):

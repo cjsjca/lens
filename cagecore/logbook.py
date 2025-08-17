@@ -55,33 +55,25 @@ def append(entry_type, data):
         raise ValueError("Log file size decreased - append-only violation")
 
 
-def guard_append_only():
-    """Check if append-only conditions are met"""
-    # This is called by referee to validate append-only behavior
-    # For now, return True as the actual check happens in append()
-    return True
+def guard_append_only() -> bool:
+    """True if last append did not shrink/overwrite the file"""
+    return bool(_last_append_ok)
 
 
-def tail(count=10):
-    """Get the last N entries from the trail log"""
+def get_recent_entries(count=10):
+    """Get the most recent log entries"""
+    entries = []
     log_path = room.get_trail_log_path()
 
     if not log_path.exists():
-        return []
+        return entries
 
-    entries = []
     with open(log_path, 'r', encoding='utf-8') as f:
         for line in f:
-            line = line.strip()
-            if line:
+            if line.strip():
                 try:
                     entries.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
 
     return entries[-count:] if entries else []
-
-
-def get_recent_entries(count=50):
-    """Get recent entries - alias for tail"""
-    return tail(count)

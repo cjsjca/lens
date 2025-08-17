@@ -3,9 +3,8 @@ Executor (applies diffs only)
 Executes planned changes using diff-based operations.
 """
 
-from . import referee, logbook, workbench, planner, diffs, tests
+from . import diffs, workbench, tests, logbook, referee
 
-# Global flag to track when diff mode is active
 DIFF_MODE_ACTIVE = False
 
 

@@ -41,19 +41,13 @@ def bootstrap_write(rel_path: str, content: str) -> None:
         f.write(content)
 
 
-def write_file_guarded(path, new_content):
+def write_file_guarded(rel_path: str, content: str) -> None:
     """Guarded file write that enforces all rules"""
-    file_path = get_workspace_path(path)
-
-    # Enforce workspace-only writes
+    file_path: Path = room.workspace_path() / rel_path
     referee.enforce_workspace_only(file_path)
-
-    # Enforce diff-only writes
-    referee.enforce_diff_only(path=file_path)
-
-    # Write the content
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(new_content)
+    referee.enforce_diff_only(path=file_path)  # blocks unless in diff-mode (or bootstrap)
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
 
 
 def write_file(filename, content):
